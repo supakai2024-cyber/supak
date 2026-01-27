@@ -1,0 +1,797 @@
+=======================================================
+STOCKROBO-US01: PHASE 1 SOURCE CODE BACKUP
+=======================================================
+
+START FILE: src/security/authenticator.py
+--------------------------------------------------
+import time
+import hmac
+import hashlib
+import struct
+
+class Authenticator:
+    def __init__(self, secret_key: str = "ANTIGRAVITY_SECURE_KEY", interval: int = 15):
+        """
+        Initialize the Authenticator using a TOTP-like mechanism.
+        
+        Args:
+            secret_key (str): The secret key for HMAC.
+            interval (int): Time step in seconds (default 15s).
+        """
+        self.secret = secret_key
+        self.interval = interval
+
+    def generate_code(self, timestamp=None) -> str:
+        """
+        Generate a 6-digit code based on the current time (or provided timestamp).
+        """
+        if timestamp is None:
+            timestamp = time.time()
+        
+        # Calculate time counter based on interval
+        counter = int(timestamp // self.interval)
+        
+        # Convert counter to bytes (8 bytes, big-endian)
+        counter_bytes = struct.pack(">Q", counter)
+        
+        # Create HMAC-SHA1 signature using the secret
+        key_bytes = self.secret.encode('utf-8')
+        hmac_digest = hmac.new(key_bytes, counter_bytes, hashlib.sha1).digest()
+        
+        # Dynamic Truncation
+        offset = hmac_digest[-1] & 0x0F
+        binary_code = (
+            (hmac_digest[offset] & 0x7F) << 24 |
+            (hmac_digest[offset + 1] & 0xFF) << 16 |
+            (hmac_digest[offset + 2] & 0xFF) << 8 |
+            (hmac_digest[offset + 3] & 0xFF)
+        )
+        
+        # Generate 6-digit OTP
+        otp = binary_code % 1_000_000
+        return f"{otp:06d}"
+
+    def verify_code(self, code: str, window: int = 1) -> bool:
+        """
+        Verify the provided code.
+        
+        Args:
+            code (str): The code to verify.
+            window (int): Number of intervals to check before/after.
+        
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        current_time = time.time()
+        
+        # Check current, previous, and next windows
+        for i in range(-window, window + 1):
+            check_time = current_time + (i * self.interval)
+            if self.generate_code(check_time) == code:
+                return True
+        return False
+
+# Self-test if run standalone
+if __name__ == "__main__":
+    auth = Authenticator()
+    code = auth.generate_code()
+    print(f"Generated Code: {code}")
+    print(f"Verify Result: {auth.verify_code(code)}")
+
+--------------------------------------------------
+END FILE: src/security/authenticator.py
+=======================================================
+
+START FILE: src/data/market_data.py
+--------------------------------------------------
+import yfinance as yf
+import pandas as pd
+from typing import Optional
+
+class MarketData:
+    """
+    Handler for fetching market data using yfinance.
+    """
+    
+    def __init__(self):
+        pass
+
+    def get_history(self, symbol: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
+        """
+        Fetch historical data for a given symbol.
+        
+        Args:
+            symbol (str): The ticker symbol (e.g., 'AAPL', 'TSLA').
+            period (str): The period to download (default '1y'). 
+                          Valid periods: 1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max
+            interval (str): The interval (default '1d').
+                            Valid intervals: 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo
+                            
+        Returns:
+            pd.DataFrame: DataFrame containing Open, High, Low, Close, Volume.
+                          Returns empty DataFrame if failed.
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(period=period, interval=interval)
+            
+            if df.empty:
+                print(f"Warning: No data found for {symbol}")
+                return df
+                
+            # Ensure standard column names and simple index
+            df.reset_index(inplace=True)
+            
+            # yfinance returns 'Date' or 'Datetime' depending on interval
+            # We want to ensure we handle it gracefully, but usually it's fine.
+            
+            return df
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {e}")
+            return pd.DataFrame()
+
+    def get_realtime_price(self, symbol: str) -> Optional[float]:
+        """
+        Get the latest price (delayed real-time).
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            # fast_info is often faster/more reliable for simple price
+            return ticker.fast_info['last_price']
+        except Exception as e:
+            # Fallback to history
+            try:
+                df = self.get_history(symbol, period='1d', interval='1m')
+                if not df.empty:
+                    return df['Close'].iloc[-1]
+            except:
+                pass
+            print(f"Error fetching price for {symbol}: {e}")
+            return None
+
+if __name__ == "__main__":
+    # Test Code
+    md = MarketData()
+    symbol = "AAPL"
+    print(f"Fetching data for {symbol}...")
+    df = md.get_history(symbol)
+    print(f"Data shape: {df.shape}")
+    print(df.head())
+    
+    price = md.get_realtime_price(symbol)
+    print(f"Current Price of {symbol}: {price}")
+
+--------------------------------------------------
+END FILE: src/data/market_data.py
+=======================================================
+
+START FILE: src/strategies/cdc_action_zone.py
+--------------------------------------------------
+import pandas as pd
+import numpy as np
+
+class CDCActionZone:
+    def __init__(self, slow_period=26, fast_period=12):
+        self.slow_period = slow_period
+        self.fast_period = fast_period
+
+    def calculate(self, df: pd.DataFrame, close_col='Close') -> pd.DataFrame:
+        """
+        Calculate CDC Action Zone signals.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing price data.
+            close_col (str): The column name for closing prices.
+            
+        Returns:
+            pd.DataFrame: DataFrame with 'Color' and 'Action_Zone_Signal' columns.
+        """
+        if df.empty:
+            return df
+
+        # Calculate EMAs
+        df['EMA12'] = df[close_col].ewm(span=self.fast_period, adjust=False).mean()
+        df['EMA26'] = df[close_col].ewm(span=self.slow_period, adjust=False).mean()
+
+        # Define Colors/States logic
+        # Green: EMA12 > EMA26 and Close > EMA12 (Strong Uptrend - Buy)
+        # Blue: EMA12 > EMA26 and Close <= EMA12 (Weak Uptrend - Hold/Correction)
+        # Red: EMA12 < EMA26 and Close < EMA12 (Strong Downtrend - Sell)
+        # Yellow: EMA12 < EMA26 and Close >= EMA12 (Weak Downtrend - Hold/Rebound)
+        
+        conditions = [
+            (df['EMA12'] > df['EMA26']) & (df[close_col] > df['EMA12']), # Green
+            (df['EMA12'] > df['EMA26']) & (df[close_col] <= df['EMA12']),# Blue
+            (df['EMA12'] < df['EMA26']) & (df[close_col] < df['EMA12']), # Red
+            (df['EMA12'] < df['EMA26']) & (df[close_col] >= df['EMA12']) # Yellow
+        ]
+        
+        choices = ['Green', 'Blue', 'Red', 'Yellow']
+        
+        df['Color'] = np.select(conditions, choices, default='Neutral')
+        
+        # Action Zone Signal: 1 (Buy/Green), -1 (Sell/Red), 0 (Neutral)
+        df['Action_Zone_Signal'] = 0
+        df.loc[df['Color'] == 'Green', 'Action_Zone_Signal'] = 1
+        df.loc[df['Color'] == 'Red', 'Action_Zone_Signal'] = -1
+        
+        return df
+
+if __name__ == "__main__":
+    # Test Data
+    data = {'Close': [100, 105, 110, 108, 115, 120, 118, 112, 105, 100]}
+    df_test = pd.DataFrame(data)
+    cdc = CDCActionZone()
+    result = cdc.calculate(df_test)
+    print(result[['Close', 'EMA12', 'EMA26', 'Color', 'Action_Zone_Signal']])
+
+--------------------------------------------------
+END FILE: src/strategies/cdc_action_zone.py
+=======================================================
+
+START FILE: src/strategies/fibo_strategy.py
+--------------------------------------------------
+import pandas as pd
+import numpy as np
+
+class FiboZoneStrategy:
+    def __init__(self, lookback_period=60):
+        # lookback_period: timeframe to find the Swing High/Low
+        self.lookback = lookback_period
+
+    def calculate(self, df: pd.DataFrame, close_col='Close', high_col='High', low_col='Low') -> pd.DataFrame:
+        """
+        Calculates Fibo Retracement Zones and generates signals.
+        Focus: Catching dips in an uptrend (Pullback Strategy).
+        """
+        if df.empty:
+            return df
+
+        # Create copies to avoid SettingWithCopy warnings
+        df = df.copy()
+
+        # 1. Identify Swing High (Rolling Max)
+        # We assume the 'Trend' is the move from a recent Low to the recent High.
+        # This is a simplified dynamic Fibo logic.
+        
+        # Current Swing High over the lookback window
+        df['Swing_High'] = df[high_col].rolling(window=self.lookback).max()
+        
+        # Low of the lookback window (This is a simplification; ideally we find the low *preceding* the high)
+        # For efficiency, we'll take the Rolling Min.
+        df['Swing_Low'] = df[low_col].rolling(window=self.lookback).min()
+        
+        df['Range'] = df['Swing_High'] - df['Swing_Low']
+        
+        # Calculate Retracement Levels (from High going down)
+        # Fibo 0% = High
+        # Fibo 100% = Low
+        # Deep Pullback Area: 50% to 78.6% Retracement
+        
+        # Price at 50% pullback
+        df['Fibo_500'] = df['Swing_High'] - (df['Range'] * 0.5)
+        
+        # Price at 78.6% pullback (Golden Ratio extension for deep deeps)
+        df['Fibo_786'] = df['Swing_High'] - (df['Range'] * 0.786)
+        
+        # Signal Logic
+        # BUY (1): If Close is > Fibo_786 AND Close < Fibo_500
+        # (Meaning price is inside the deep discount zone)
+        # AND Price is NOT making new lows (basic filter, maybe RSI < 30 can be added later)
+        
+        # Let's add an RSI filter to ensure it's oversold (optional but good for specific strategy)
+        # delta = df[close_col].diff()
+        # gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+        # loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        # rs = gain / loss
+        # df['RSI'] = 100 - (100 / (1 + rs))
+
+        conditions = [
+            (df[close_col] <= df['Fibo_500']) & (df[close_col] >= df['Fibo_786'])
+        ]
+        
+        df['In_Fibo_Zone'] = np.where(conditions[0], True, False)
+        
+        # Generate Signals compatible with BacktestEngine
+        # 1 = Buy, -1 = Sell
+        # Logic: Buy when we enter the zone? or stay in zone?
+        # Let's Buy when we enter the zone.
+        
+        df['Action_Zone_Signal'] = 0
+        
+        # Buy if in Zone
+        # We might want to hold until valid exit. 
+        # For this test: Enter when in zone. Exit when Price > Fibo_500 (Recovery) OR Stop Loss (New Low)
+        
+        # To keep it simple for the engine:
+        # Signal = 1 when In_Zone. 
+        # Signal = -1 when Close > Fibo_500 (Profit Taking) or Close < Swing_Low (Stop Out)
+        
+        buy_cond = df['In_Fibo_Zone']
+        sell_cond_profit = df[close_col] > df['Fibo_500'] 
+        sell_cond_loss   = df[close_col] < df['Swing_Low']
+        
+        df.loc[buy_cond, 'Action_Zone_Signal'] = 1
+        df.loc[sell_cond_profit, 'Action_Zone_Signal'] = -1 # Take profit when bounces back above 50%
+        df.loc[sell_cond_loss, 'Action_Zone_Signal'] = -1   # Stop loss if breaks low
+        
+        return df
+
+--------------------------------------------------
+END FILE: src/strategies/fibo_strategy.py
+=======================================================
+
+START FILE: src/engine/backtest_engine.py
+--------------------------------------------------
+import pandas as pd
+from src.data.market_data import MarketData
+
+class BacktestEngine:
+    def __init__(self, initial_capital=10000.0):
+        self.market_data = MarketData()
+        self.initial_capital = initial_capital
+
+    def run(self, symbol: str, strategy, period="1y"):
+        print(f"--- Starting Backtest for {symbol} ---")
+        
+        # 1. Get Data
+        # Ensure we are passing the column CDC needs. MarketData returns 'Close'.
+        df = self.market_data.get_history(symbol, period=period)
+        if df.empty:
+            print("No data found.")
+            return None, None
+        
+        # 2. Apply Strategy
+        # Strategy MUST have a calculate(df) method that returns df with signals
+        df = strategy.calculate(df)
+        
+        if 'Action_Zone_Signal' not in df.columns:
+            print("Strategy did not generate 'Action_Zone_Signal' column.")
+            return None, None
+
+        # 3. Simulate Trades
+        # Signal: 1 (Buy/Hold), -1 (Sell), 0 (Neutral)
+        
+        trades = []
+        position = 0 # 0: None, 1: Long
+        capital = self.initial_capital
+        shares = 0
+        
+        # Simplified Logic:
+        # Buy when Signal turns 1 (Green) from non-1 (or just check state if we want to valid always being in market)
+        # CDC typically: Green = Buy/Hold, Red = Sell/Stay Out.
+        # So we enter if Green AND position=0. We exit if Red AND position=1.
+        
+        for index, row in df.iterrows():
+            current_signal = row['Action_Zone_Signal']
+            price = row['Close']
+            # Date might be in index or column depending on reset_index in market_data
+            date = row['Date'] if 'Date' in row else index
+            
+            if position == 0:
+                if current_signal == 1:
+                    # BUY SIGNAL
+                    position = 1
+                    shares = capital / price
+                    trades.append({
+                        'Date': date,
+                        'Type': 'BUY',
+                        'Price': price,
+                        'Shares': shares,
+                        'Value': capital,
+                        'PnL': 0.0
+                    })
+            elif position == 1:
+                # Check for Exit
+                if current_signal == -1:
+                    # SELL SIGNAL
+                    position = 0
+                    new_capital = shares * price
+                    pnl = new_capital - capital
+                    capital = new_capital
+                    
+                    trades.append({
+                        'Date': date,
+                        'Type': 'SELL',
+                        'Price': price,
+                        'Shares': shares,
+                        'Value': capital,
+                        'PnL': pnl
+                    })
+                    shares = 0
+        
+        # Calculate final portfolio value
+        final_value = capital
+        if position == 1:
+            current_price = df.iloc[-1]['Close']
+            final_value = shares * current_price
+            
+        print(f"Initial Capital: {self.initial_capital:,.2f}")
+        print(f"Final Value: {final_value:,.2f}")
+        print(f"Return: {((final_value - self.initial_capital) / self.initial_capital) * 100:.2f}%")
+        print(f"Total Trades: {len(trades)}")
+        
+        return pd.DataFrame(trades), df
+
+--------------------------------------------------
+END FILE: src/engine/backtest_engine.py
+=======================================================
+
+START FILE: src/engine/scanner.py
+--------------------------------------------------
+import pandas as pd
+from typing import List, Dict, Any
+from src.data.market_data import MarketData
+from src.strategies.cdc_action_zone import CDCActionZone
+
+class MarketScanner:
+    def __init__(self):
+        self.market_data = MarketData()
+        self.strategy = CDCActionZone()
+
+    def scan(self, symbols: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Scans values for Buy and Sell signals.
+        
+        Returns:
+            Dict containing lists of 'buy_signals' and 'sell_signals'.
+        """
+        results = {
+            'buy_signals': [],
+            'sell_signals': [],
+            'heavy_drops': [] # For stocks dropping hard (regardless of trend change)
+        }
+        
+        print(f"Scanning {len(symbols)} symbols...")
+        
+        for symbol in symbols:
+            try:
+                # We need enough data for EMA26 + some buffer. 
+                # 60 days is usually enough for calculation, but 3mo is safer.
+                df = self.market_data.get_history(symbol, period="6mo")
+                
+                if df.empty or len(df) < 30:
+                    continue
+                
+                # Apply Strategy
+                df = self.strategy.calculate(df)
+                
+                # Get the last two rows to check for crossover
+                last_row = df.iloc[-1]
+                prev_row = df.iloc[-2]
+                
+                current_price = last_row['Close']
+                prev_price = prev_row['Close']
+                pct_change = ((current_price - prev_price) / prev_price) * 100
+                
+                # 1. Detect Buy Signal (Just turned Green)
+                # Current is Green, Previous was NOT Green (Red, Blue, Yellow)
+                if last_row['Color'] == 'Green' and prev_row['Color'] != 'Green':
+                    results['buy_signals'].append({
+                        'symbol': symbol,
+                        'price': current_price,
+                        'change_pct': pct_change,
+                        'date': last_row['Date'] if 'Date' in last_row else last_row.name
+                    })
+
+                # 2. Detect Sell Signal (Just turned Red)
+                # Current is Red, Previous was NOT Red
+                if last_row['Color'] == 'Red' and prev_row['Color'] != 'Red':
+                    results['sell_signals'].append({
+                        'symbol': symbol,
+                        'price': current_price,
+                        'change_pct': pct_change,
+                        'date': last_row['Date'] if 'Date' in last_row else last_row.name
+                    })
+                    
+                # 3. Detect "Heavy Drop" (Panic Selling Watchlist)
+                # Criteria: Drop more than 3% in one day (configurable)
+                # regardless of trend, though usually happens in Red/Yellow.
+                if pct_change <= -3.0:
+                    results['heavy_drops'].append({
+                        'symbol': symbol,
+                        'price': current_price,
+                        'change_pct': pct_change,
+                        'color': last_row['Color']
+                    })
+
+            except Exception as e:
+                print(f"Error scanning {symbol}: {e}")
+                continue
+                
+        return results
+
+--------------------------------------------------
+END FILE: src/engine/scanner.py
+=======================================================
+
+START FILE: src/risk/risk_manager.py
+--------------------------------------------------
+import pandas as pd
+import numpy as np
+from typing import Dict, Any
+
+class RiskManager:
+    def __init__(self, portfolio_value: float, risk_per_trade_pct: float = 1.0):
+        """
+        Manages Position Sizing and Risk Metrics.
+        
+        Args:
+            portfolio_value (float): Total capital available (or Total Equity).
+            risk_per_trade_pct (float): Max risk per trade as % of portfolio (e.g. 1.0 = 1%).
+        """
+        self.portfolio_value = portfolio_value
+        self.risk_pct = risk_per_trade_pct / 100.0
+
+    def calculate_position_size(self, entry_price: float, stop_loss_price: float) -> Dict[str, Any]:
+        """
+        Calculate ideal position size based on risk and stop loss distance.
+        The Golden Rule: Money Risked = (Entry - StopLoss) * NumberOfShares
+        
+        Returns:
+            Dict with 'shares', 'position_value', 'risk_amount', 'actual_risk_pct'
+        """
+        if entry_price <= stop_loss_price:
+             # Stop loss must be below entry for long position
+             # Unless we handle short, but for now we assume Long Only.
+             return {
+                 'shares': 0,
+                 'reason': 'Stop Loss is above or equal to Entry Price (Invalid for Long)'
+             }
+             
+        risk_per_share = entry_price - stop_loss_price
+        max_risk_amount = self.portfolio_value * self.risk_pct
+        
+        # Calculate shares
+        shares = int(max_risk_amount // risk_per_share)
+        
+        # Ensure we don't exceed portfolio cash (Buying Power check)
+        # Though often Risk limits size before buying power does for tight stops.
+        total_cost = shares * entry_price
+        if total_cost > self.portfolio_value:
+            # If cost exceeds cash, we are limited by Cash, not Risk.
+            shares_cash_limit = int(self.portfolio_value // entry_price)
+            shares = shares_cash_limit
+            # In this case, our risk is actually LESS than max_risk_amount
+        
+        position_value = shares * entry_price
+        actual_risk_dollars = shares * risk_per_share
+        
+        return {
+            'shares': shares,
+            'entry': entry_price,
+            'stop_loss': stop_loss_price,
+            'position_value': position_value,
+            'risk_per_share': risk_per_share,
+            'total_risk_dollars': actual_risk_dollars,
+            'risk_pct_of_port': (actual_risk_dollars / self.portfolio_value) * 100
+        }
+
+    def assess_market_regime(self, market_data_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Simple Market Regime Filter using SMA200.
+        market_data_df must contain 'Close' and sufficient history.
+        """
+        if market_data_df.empty or len(market_data_df) < 200:
+            return {'regime': 'Unknown', 'safety_level': 'Neutral'}
+            
+        current_price = market_data_df['Close'].iloc[-1]
+        sma200 = market_data_df['Close'].rolling(window=200).mean().iloc[-1]
+        
+        if current_price > sma200:
+            return {
+                'regime': 'Bullish',
+                'description': 'Price is above 200-day SMA.',
+                'safety_level': 'Safe'
+            }
+        else:
+            return {
+                'regime': 'Bearish',
+                'description': 'Price is below 200-day SMA. Caution advised.',
+                'safety_level': 'Caution'
+            }
+
+--------------------------------------------------
+END FILE: src/risk/risk_manager.py
+=======================================================
+
+START FILE: run_phase1.py
+--------------------------------------------------
+from src.strategies.cdc_action_zone import CDCActionZone
+from src.engine.backtest_engine import BacktestEngine
+import pandas as pd
+
+def main():
+    print("==========================================")
+    print("   StockRobo-US01: Phase 1 Demo Run       ")
+    print("==========================================")
+    
+    # Initialize components
+    strategy = CDCActionZone()
+    engine = BacktestEngine(initial_capital=10_000)
+    
+    # Symbols to test
+    symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA']
+    
+    for symbol in symbols:
+        print(f"\nProcessing {symbol}...")
+        trades, df = engine.run(symbol, strategy, period="2y")
+        
+        if trades is not None and not trades.empty:
+            print("Last 3 Trades:")
+            print(trades.tail(3)[['Date', 'Type', 'Price', 'PnL']])
+        else:
+            print("No trades generated.")
+            
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------
+END FILE: run_phase1.py
+=======================================================
+
+START FILE: run_scanner.py
+--------------------------------------------------
+from src.engine.scanner import MarketScanner
+import pandas as pd
+
+def main():
+    scanner = MarketScanner()
+    
+    # A list of popular US Tech & High Volume stocks for demo
+    # In production, this could be loaded from a CSV or API
+    target_symbols = [
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX', # Big Tech
+        'AMD', 'INTC', 'QCOM', 'MU', # Semis
+        'COIN', 'HOOD', 'PLTR', 'U', # Growth/Retail faves
+        'SPY', 'QQQ', 'IWM', # Indices
+        'DIS', 'BA', 'MCD', 'KO', 'JNJ', # Traditional
+        'MARA', 'RIOT' # Crypto miners (high volatility)
+    ]
+    
+    print("==========================================")
+    print("   StockRobo-US01: Market Scanner         ")
+    print("==========================================")
+    
+    results = scanner.scan(target_symbols)
+    
+    # --- Report: Buy Signals ---
+    print("\n[ BUY SIGNALS ] - Newly turned Green (Bullish)")
+    if results['buy_signals']:
+        df_buy = pd.DataFrame(results['buy_signals'])
+        print(df_buy[['symbol', 'price', 'change_pct']])
+    else:
+        print("No new buy signals today.")
+        
+    # --- Report: Sell Signals ---
+    print("\n[ SELL SIGNALS ] - Newly turned Red (Bearish)")
+    if results['sell_signals']:
+        df_sell = pd.DataFrame(results['sell_signals'])
+        print(df_sell[['symbol', 'price', 'change_pct']])
+    else:
+        print("No new sell signals today.")
+
+    # --- Report: Heavy Drops ---
+    print("\n[ HEAVY DROPS ] - Daily Drop > 3% (Watchlist for Rebound/Crash)")
+    if results['heavy_drops']:
+        df_drop = pd.DataFrame(results['heavy_drops'])
+        print(df_drop[['symbol', 'price', 'change_pct', 'color']])
+    else:
+        print("No heavy drops detected today.")
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------
+END FILE: run_scanner.py
+=======================================================
+
+START FILE: run_fibo.py
+--------------------------------------------------
+from src.strategies.fibo_strategy import FiboZoneStrategy
+from src.engine.backtest_engine import BacktestEngine
+import pandas as pd
+
+def main():
+    print("==========================================")
+    print("   StockRobo-US01: Fibo Zone Strategy     ")
+    print("   Logic: Buy Dip in 50-78.6% Retrace     ")
+    print("==========================================")
+    
+    # Initialize
+    strategy = FiboZoneStrategy(lookback_period=120) # 6 months lookback for finding Highs
+    engine = BacktestEngine(initial_capital=10_000)
+    
+    # Test on volatile/growth stocks where corrections are deep
+    symbols = ['TSLA', 'NVDA', 'AMD', 'COIN', 'META']
+    
+    for symbol in symbols:
+        print(f"\n--- Processing {symbol} ---")
+        trades, df = engine.run(symbol, strategy, period="2y")
+        
+        if trades is not None and not trades.empty:
+            # Calculate Win Rate specific to this strategy
+            wins = trades[trades['PnL'] > 0]
+            win_rate = (len(wins) / len(trades[trades['Type'] == 'SELL'])) * 100 if len(trades[trades['Type'] == 'SELL']) > 0 else 0
+            
+            print(f"Win Rate: {win_rate:.2f}%")
+            print("Transactions (Sample):")
+            print(trades.tail(5))
+        else:
+            print("No trades triggered (Price maybe didn't hit the deep zone).")
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------
+END FILE: run_fibo.py
+=======================================================
+
+START FILE: run_risk_analysis.py
+--------------------------------------------------
+from src.risk.risk_manager import RiskManager
+from src.data.market_data import MarketData
+from src.strategies.fibo_strategy import FiboZoneStrategy
+
+def main():
+    print("==========================================")
+    print("   StockRobo-US01: Risk & Ready (Battle Prep) ")
+    print("==========================================")
+    
+    # 1. Setup
+    total_portfolio = 50_000 # Let's say we have $50k
+    risk_pct = 2.0           # We want to risk MAX 2% per trade ($1,000)
+    
+    risk_mgr = RiskManager(portfolio_value=total_portfolio, risk_per_trade_pct=risk_pct)
+    market_data = MarketData()
+    
+    # Let's say our Scanner found these opportunities
+    # Simulation: We found signals on these stocks
+    candidates = [
+        {'symbol': 'TSLA', 'entry': 420.00, 'stop': 380.00}, # Volatile, wide stop
+        {'symbol': 'NVDA', 'entry': 140.00, 'stop': 135.00}, # Tight stop
+        {'symbol': 'KO',   'entry': 60.00,  'stop': 58.00},  # Low volatility
+    ]
+    
+    # 2. Check Market Regime (Filter)
+    print("\n[ Step 1: Market Regime Check (SPY) ]")
+    spy_df = market_data.get_history('SPY', period='2y')
+    regime = risk_mgr.assess_market_regime(spy_df)
+    
+    print(f"Market Status: {regime['regime']} ({regime['safety_level']})")
+    print(f"Details: {regime['description']}")
+    
+    if regime['safety_level'] == 'Caution':
+        print(">> WARNING: Bear Market Detected. Reducing Risk to 1%...")
+        risk_mgr.risk_pct = 0.01
+    
+    # 3. Calculate Sizing for Candidates
+    print("\n[ Step 2: Position Sizing Calculator ]")
+    print(f"Portfolio: ${total_portfolio:,.2f}")
+    print(f"Risk per Trade: {risk_mgr.risk_pct * 100}% (${total_portfolio * risk_mgr.risk_pct:,.2f})")
+    print("-" * 60)
+    print(f"{'SYMBOL':<10} {'ENTRY':<10} {'STOP':<10} {'SHARES':<10} {'POSITION $':<15} {'RISK $':<10}")
+    print("-" * 60)
+    
+    for item in candidates:
+        sizing = risk_mgr.calculate_position_size(item['entry'], item['stop'])
+        
+        print(f"{item['symbol']:<10} "
+              f"{sizing['entry']:<10.2f} "
+              f"{sizing['stop_loss']:<10.2f} "
+              f"{sizing['shares']:<10} "
+              f"${sizing['position_value']:<14,.2f} "
+              f"${sizing['total_risk_dollars']:<10.2f}")
+              
+    print("-" * 60)
+    print("Observation: Notice how 'Shares' adjust based on Stop Loss width.")
+    print("TSLA (Wide Stop) -> Fewer Shares to cap risk.")
+    print("NVDA (Tight Stop) -> More Shares allowed.")
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------
+END FILE: run_risk_analysis.py
+=======================================================
+
