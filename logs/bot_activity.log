@@ -1,0 +1,9 @@
+[2026-01-26 19:20:48] [INFO] SYSTEM: Initializing StockRobo-US01...
+[2026-01-26 19:20:48] [INFO] SYSTEM: Initialization Complete.
+[2026-01-26 19:20:48] [INFO] SCANNER: Starting Scheduled Market Scan...
+[2026-01-26 19:20:52] [INFO] SIGNAL: Found BUY signal: NVDA at 187.67
+[2026-01-26 19:20:52] [INFO] SIGNAL: Found BUY signal: AMZN at 239.16
+[2026-01-26 19:20:52] [INFO] OPPORTUNITY: Found 2 potential candidates.
+[2026-01-26 19:20:52] [INFO] ORDER_GEN: Generated Order for NVDA: 106 shares
+[2026-01-26 19:20:52] [INFO] ORDER_GEN: Generated Order for AMZN: 83 shares
+[2026-01-26 19:20:53] [INFO] EXECUTION: Sent 2 orders to market.
