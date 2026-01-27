@@ -31,11 +31,11 @@ ALL_SYMBOLS = [
     # Healthcare
     'UNH', 'LLY', 'ABBV', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN', 'GILD', 'CVS',
     # Energy
-    'SLB', 'COP', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX',
+    'SLB', 'COP', 'EOG', 'MPC', 'VLO', 'PSX',
     # Consumer
     'COST', 'HD', 'LOW', 'TGT', 'NKE', 'SBUX', 'CMG', 'YUM',
     # Communications
-    'T', 'VZ', 'TMUS', 'CMCSA', 'PARA',
+    'T', 'VZ', 'TMUS', 'CMCSA',
     # Industrial
     'CAT', 'DE', 'UPS', 'FDX', 'HON', 'MMM', 'GE', 'LMT', 'RTX',
 ]
