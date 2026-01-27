@@ -2,7 +2,7 @@ name: "StockRobo-US01 Full-Auto Bot"
 
 on:
   schedule:
-    # รอบที่ 1: 21:35 น. (14:35 UTC) - จะสแกนตลาดและเริ่มเทรด
+    # รอบที่ 1: 21:35 น. (14:35 UTC)
     - cron: '35 14 * * 1-5'
     # รอบที่ 2: 23:05 น. (16:05 UTC)
     - cron: '5 16 * * 1-5'
@@ -21,6 +21,8 @@ permissions:
 jobs:
   trade:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -35,19 +37,21 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: 0. Ensure Data Directory
+        run: mkdir -p data
+
       - name: 1. Scan Market (500+ Stocks)
         run: python generate_combined_watchlist.py
-        # ขั้นตอนนี้จะสร้าง data/watchlist.json ใหม่ทุกรอบ
 
       - name: 2. Execute Trading
         run: python run_phase2_gh_action.py
 
-      - name: 3. Commit and Push Updates (State & Watchlist)
+      - name: 3. Commit and Push Updates
         run: |
           git config --global user.name "StockRobo Full-Auto"
           git config --global user.email "bot@stockrobo.local"
           git add data/portfolio_state.json data/watchlist.json
           git diff --staged --quiet || git commit -m "Full-Auto Update: Portfolio & Watchlist [skip ci]"
-          git diff --staged --quiet || git push
+          git push origin main || echo "Nothing to push or push failed"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
