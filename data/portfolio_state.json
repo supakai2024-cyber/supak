@@ -1,9 +1,13 @@
 {
-    "timestamp": 1738000000,
-    "cash_balance": 48500.00,
+    "timestamp": 1769536583.7306747,
+    "cash_balance": 4.873895645141602,
     "portfolio": {
         "NVDA": 10,
-        "TSLA": 5
+        "TSLA": 5,
+        "GM": 231,
+        "RIOT": 1178,
+        "HUT": 145,
+        "F": 3
     },
     "orders": [
         {
@@ -12,8 +16,8 @@
             "action": "BUY",
             "quantity": 10,
             "order_type": "LIMIT",
-            "limit_price": 145.00,
-            "filled_price": 145.00,
+            "limit_price": 145.0,
+            "filled_price": 145.0,
             "status": "FILLED",
             "timestamp": 1737900000,
             "notes": "Strategy: Scanner_CDC | Score: 105.0"
@@ -24,11 +28,59 @@
             "action": "BUY",
             "quantity": 5,
             "order_type": "LIMIT",
-            "limit_price": 250.00,
-            "filled_price": 250.00,
+            "limit_price": 250.0,
+            "filled_price": 250.0,
             "status": "FILLED",
             "timestamp": 1737950000,
             "notes": "Strategy: Scanner_CDC | Score: 95.0"
+        },
+        {
+            "order_id": "fb4af53f",
+            "symbol": "GM",
+            "action": "BUY",
+            "quantity": 231,
+            "order_type": "LIMIT",
+            "limit_price": 86.2699966430664,
+            "status": "FILLED",
+            "timestamp": 1769536581.7285395,
+            "notes": "Strategy: Scanner_CDC | Score: 75.0",
+            "filled_price": 86.2699966430664
+        },
+        {
+            "order_id": "382014ed",
+            "symbol": "RIOT",
+            "action": "BUY",
+            "quantity": 1178,
+            "order_type": "LIMIT",
+            "limit_price": 16.969999313354492,
+            "status": "FILLED",
+            "timestamp": 1769536581.7285535,
+            "notes": "Strategy: Scanner_CDC | Score: 75.0",
+            "filled_price": 16.969999313354492
+        },
+        {
+            "order_id": "8225f9ea",
+            "symbol": "HUT",
+            "action": "BUY",
+            "quantity": 145,
+            "order_type": "LIMIT",
+            "limit_price": 58.86000061035156,
+            "status": "FILLED",
+            "timestamp": 1769536581.7285643,
+            "notes": "Strategy: Scanner_CDC | Score: 75.0",
+            "filled_price": 58.86000061035156
+        },
+        {
+            "order_id": "6749b5f9",
+            "symbol": "F",
+            "action": "BUY",
+            "quantity": 3,
+            "order_type": "LIMIT",
+            "limit_price": 13.799200057983398,
+            "status": "FILLED",
+            "timestamp": 1769536581.728576,
+            "notes": "Strategy: Scanner_CDC | Score: 75.0",
+            "filled_price": 13.799200057983398
         }
     ]
 }
