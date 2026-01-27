@@ -1,0 +1,42 @@
+name: "StockRobo-US01 Phase 2 Bot"
+
+on:
+  schedule:
+    # ตั้งเวลารันทุกๆ 6 ชั่วโมง (ปรับเวลาตามต้องการได้ทีหลัง)
+    - cron: '0 */6 * * 1-5'
+  workflow_dispatch: # ปุ่มสำหรับกดรันเองด้วยมือ
+
+permissions:
+  contents: write # อนุญาตให้บอทบันทึกข้อมูลกลับเข้า Repo ได้
+
+jobs:
+  run-market-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Phase 2 Bot (Single Pass)
+        run: python run_phase2_gh_action.py
+
+      - name: Commit and Push Portfolio State
+        # ถ้าไฟล์ data/portfolio_state.json มีการเปลี่ยนแปลง ให้ Save กลับ
+        run: |
+          git config --global user.name "StockRobo Bot"
+          git config --global user.email "bot@stockrobo.local"
+          git add data/portfolio_state.json
+          git commit -m "Auto-update portfolio state [skip ci]" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
