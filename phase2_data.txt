@@ -1,0 +1,653 @@
+================================================================================
+STOCKROBO-US01 PHASE 2: EXECUTION & AUTOMATION - COMPLETE BACKUP
+================================================================================
+Date: 2026-01-27
+Status: COMPLETED ✅
+GitHub Actions: Successfully Running
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Project Overview
+2. File Structure
+3. Complete Code Files
+   3.1 GitHub Actions Workflow (.github/workflows/phase2_bot.yml)
+   3.2 Main Execution Script (run_phase2_gh_action.py)
+   3.3 Order Manager with Persistence (src/execution/order_manager.py)
+   3.4 Risk Manager (src/risk/risk_manager.py)
+   3.5 Dependencies (requirements.txt)
+4. Configuration Details
+5. Execution Schedule
+6. Troubleshooting Guide
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+Phase 2 implements automated trading execution on GitHub Actions with:
+- Cloud-based execution (no local computer needed)
+- Portfolio state persistence across runs
+- Scheduled execution: 5 times/day (Mon-Fri)
+- Aligned with US market hours (Thailand timezone)
+
+Key Features:
+✅ Stateless execution with state management
+✅ Automatic scheduling via GitHub Actions
+✅ Cross-platform compatibility (Windows/Linux)
+✅ Error handling and logging
+✅ Paper trading simulation
+
+================================================================================
+2. FILE STRUCTURE
+================================================================================
+
+stockrobo-us01/
+├── .github/
+│   └── workflows/
+│       └── phase2_bot.yml          # GitHub Actions workflow configuration
+├── src/
+│   ├── execution/
+│   │   └── order_manager.py        # Order execution with persistence
+│   ├── risk/
+│   │   └── risk_manager.py         # Position sizing and risk management
+│   ├── engine/
+│   │   ├── scanner.py              # Market scanner
+│   │   └── backtest_engine.py      # Backtesting engine
+│   ├── strategies/
+│   │   ├── cdc_action_zone.py      # CDC strategy
+│   │   └── fibo_strategy.py        # Fibonacci strategy
+│   ├── data/
+│   │   └── market_data.py          # Market data fetcher
+│   ├── notification/
+│   │   └── alert_engine.py         # Alert system
+│   └── security/
+│       └── authenticator.py        # Security module
+├── data/
+│   └── portfolio_state.json        # Portfolio persistence (auto-created)
+├── run_phase2_gh_action.py         # Main script for GitHub Actions
+├── requirements.txt                # Python dependencies
+├── ROADMAP.md                      # Project roadmap
+├── PHASE2_SUMMARY.md               # Phase 2 documentation
+└── phase2_data.txt                 # This backup file
+
+================================================================================
+3. COMPLETE CODE FILES
+================================================================================
+
+================================================================================
+3.1 GitHub Actions Workflow (.github/workflows/phase2_bot.yml)
+================================================================================
+
+name: "StockRobo-US01 Phase 2 Bot"
+
+on:
+  schedule:
+    # รอบที่ 1: 21:35 น. เวลาไทย (14:35 UTC)
+    - cron: '35 14 * * 1-5'
+    # รอบที่ 2: 23:05 น. เวลาไทย (16:05 UTC)
+    - cron: '5 16 * * 1-5'
+    # รอบที่ 3: 00:35 น. เวลาไทย (17:35 UTC)
+    - cron: '35 17 * * 1-5'
+    # รอบที่ 4: 02:05 น. เวลาไทย (19:05 UTC)
+    - cron: '5 19 * * 1-5'
+    # รอบที่ 5: 03:35 น. เวลาไทย (20:35 UTC)
+    - cron: '35 20 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+permissions:
+  contents: write # Important: Allows the bot to commit changes to the repo
+
+jobs:
+  run-market-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Phase 2 Bot (Single Pass)
+        run: python run_phase2_gh_action.py
+
+      - name: Commit and Push Portfolio State
+        # Only commit if there are changes to the state file
+        run: |
+          git config --global user.name "StockRobo Bot"
+          git config --global user.email "bot@stockrobo.local"
+          git add data/portfolio_state.json || echo "No state file to add"
+          git diff --staged --quiet || git commit -m "Auto-update portfolio state [skip ci]"
+          git diff --staged --quiet || git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+================================================================================
+3.2 Main Execution Script (run_phase2_gh_action.py)
+================================================================================
+
+import sys
+import os
+
+# --- CRITICAL FIX: Force Add Paths ---
+# 1. หาตำแหน่งไฟล์ปัจจุบัน
+current_file_path = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_file_path)
+
+# 2. เพิ่ม path ของโฟลเดอร์ปัจจุบัน
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# 3. ลองหาโฟลเดอร์ 'src' ว่าอยู่ที่ไหน
+# ถ้าไฟล์นี้อยู่ใน stockrobo-us01/run_...py แต่ src อยู่ใน stockrobo-us01/src
+src_path = os.path.join(current_dir, 'src')
+
+# ถ้าไม่เจอ src ให้ลองถอยออกไป 1 ชั้น (เผื่อไฟล์อยู่ลึก)
+if not os.path.exists(src_path):
+    parent_dir = os.path.dirname(current_dir)
+    if parent_dir not in sys.path:
+        sys.path.append(parent_dir)
+    src_path = os.path.join(parent_dir, 'src')
+
+print(f"[DEBUG] Current Dir: {current_dir}")
+print(f"[DEBUG] System Path: {sys.path}")
+# -------------------------------------
+
+try:
+    from src.engine.scanner import MarketScanner
+    from src.execution.order_manager import OrderManager
+    from src.risk.risk_manager import RiskManager
+    from src.notification.alert_engine import AlertEngine
+except ImportError as e:
+    print(f"CRITICAL IMPORT ERROR: {e}")
+    print("Listing files in current directory:")
+    print(os.listdir(current_dir))
+    if os.path.exists(src_path):
+         print(f"Listing files in src directory ({src_path}):")
+         print(os.listdir(src_path))
+    sys.exit(1)
+
+def main():
+    try:
+        alert_system = AlertEngine()
+    except:
+        class MockAlert:
+            def send_alert(self, *args): print(f"[MOCK ALERT] {args}")
+        alert_system = MockAlert()
+
+    print("--- [GH ACTION] StockRobo-US01 Phase 2 Execution ---")
+    alert_system.send_alert("GH_ACTION", "Starting Scheduled Scan...", "INFO")
+    
+    try:
+        # State File (Force Absolute Path)
+        state_file_path = os.path.join(current_dir, "data", "portfolio_state.json")
+        os.makedirs(os.path.dirname(state_file_path), exist_ok=True)
+        
+        order_manager = OrderManager(state_file=state_file_path)
+        risk_manager = RiskManager(portfolio_value=50000.0, risk_per_trade_pct=2.0)
+        scanner = MarketScanner()
+        target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+        
+        print(f"[GH ACTION] Scanning {len(target_symbols)} symbols...")
+        results = scanner.scan(target_symbols)
+        
+        signals = []
+        for item in results.get('buy_signals', []):
+            item['strategy'] = 'Scanner_CDC' 
+            item['win_rate'] = 75.0 
+            signals.append(item)
+            
+        print(f"[GH ACTION] Found {len(signals)} raw buy signals.")
+        
+        if signals:
+            ranked_signals = order_manager.prioritize_signals(signals)
+            
+            order_manager.load_state() 
+            temp_cash = order_manager.cash_balance
+            final_orders = []
+            
+            for sig in ranked_signals:
+                entry_price = sig['price']
+                stop_price = entry_price * 0.95
+                sizing = risk_manager.calculate_position_size(entry_price, stop_price)
+                cost = sizing['shares'] * entry_price
+                
+                if cost > temp_cash:
+                     sizing['shares'] = int(temp_cash // entry_price)
+                     cost = sizing['shares'] * entry_price
+                
+                if sizing['shares'] > 0:
+                    sig['entry'] = entry_price
+                    order = order_manager.create_order(sig, sizing)
+                    if order:
+                        final_orders.append(order)
+                        temp_cash -= cost 
+
+            if final_orders:
+                order_manager.execute_orders(final_orders)
+                alert_system.send_alert("GH_ACTION", f"Successfully executed {len(final_orders)} orders.", "INFO")
+            else:
+                 print("[GH ACTION] No orders generated (Insufficient Cash).")
+        else:
+            print("[GH ACTION] No signals found.")
+
+    except Exception as e:
+        print(f"CRITICAL RUNTIME ERROR: {e}")
+        alert_system.send_alert("GH_ACTION", f"Critical Error: {e}", "CRITICAL")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+================================================================================
+3.3 Order Manager with Persistence (src/execution/order_manager.py)
+================================================================================
+
+from typing import List, Dict, Any, Optional
+import time
+import uuid
+import json
+import os
+
+class OrderManager:
+    """
+    Simulates the Execution Engine for Phase 2.
+    Handles Priority, Order Type Selection, and Reconciliation (Simulated).
+    Supports Persistence for stateless environments (e.g., GitHub Actions).
+    """
+    
+    def __init__(self, cash_balance: float = 50000.0, state_file: str = "data/portfolio_state.json"):
+        self.state_file = state_file
+        # Default starting values
+        self.cash_balance = cash_balance
+        self.orders = []
+        self.portfolio: Dict[str, int] = {} # Symbol -> Quantity
+        
+        # Load previous state if available
+        self.load_state()
+
+    def load_state(self):
+        """Load portfolio and orders from JSON file."""
+        if os.path.exists(self.state_file):
+            try:
+                with open(self.state_file, 'r') as f:
+                    data = json.load(f)
+                    self.cash_balance = data.get('cash_balance', self.cash_balance)
+                    self.portfolio = data.get('portfolio', {})
+                    self.orders = data.get('orders', [])
+                    print(f"[EXEC] Loaded persistence state from {self.state_file}")
+                    print(f"       Cash: ${self.cash_balance:.2f} | Positions: {len(self.portfolio)}")
+            except Exception as e:
+                print(f"[EXEC] Error loading state: {e}")
+        else:
+            print("[EXEC] No saved state found. Starting fresh.")
+
+    def save_state(self):
+        """Save current portfolio and orders to JSON file."""
+        data = {
+            'timestamp': time.time(),
+            'cash_balance': self.cash_balance,
+            'portfolio': self.portfolio,
+            'orders': self.orders[-50:] # Keep last 50 orders history
+        }
+        try:
+            os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
+            with open(self.state_file, 'w') as f:
+                json.dump(data, f, indent=4)
+            print(f"[EXEC] State saved to {self.state_file}")
+        except Exception as e:
+            print(f"[EXEC] Error saving state: {e}")
+        
+    def prioritize_signals(self, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Rank signals based on criteria:
+        1. Backtest Win Rate (if available)
+        2. Signal Strength (e.g., Fibo Deep Discount > Shallow Dip)
+        3. Risk/Reward Ratio (implied)
+        """
+        print(f"\n[EXEC] Prioritizing {len(signals)} signals...")
+        
+        # Scoring Logic
+        for sig in signals:
+            score = 0
+            
+            # Criterion 1: Strategy Type Preference
+            if sig['strategy'] == 'FiboZone':
+                score += 50 # Base preference for Mean Reversion (Deep Value)
+            elif sig['strategy'] == 'CDCActionZone':
+                score += 30 # Trend Following
+            
+            # Criterion 2: Win Rate (Simulated data field)
+            win_rate = sig.get('win_rate', 50.0)
+            score += win_rate # e.g., +80 points for 80% win rate
+            
+            sig['priority_score'] = score
+            
+        # Sort by Score descending
+        sorted_signals = sorted(signals, key=lambda x: x['priority_score'], reverse=True)
+        
+        for i, sig in enumerate(sorted_signals):
+            print(f"  #{i+1}: {sig['symbol']} ({sig['strategy']}) - Score: {sig['priority_score']}")
+            
+        return sorted_signals
+
+    def determine_order_type(self, symbol: str, price: float, current_volatility: float = 1.0) -> str:
+        """
+        Decide between Market vs Limit Order.
+        Logic:
+        - High Volatility -> Limit Order (to avoid slippage)
+        - Low Volatility -> Market Order (speed)
+        """
+        # Threshold: If daily move > 2%, use LIMIT.
+        if current_volatility > 2.0:
+            return "LIMIT"
+        else:
+            return "MARKET"
+
+    def create_order(self, signal: Dict[str, Any], position_size: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Generate an Order Ticket.
+        """
+        shares = position_size['shares']
+        if shares <= 0:
+            return None
+            
+        price = position_size['entry']
+        # Simulating fetching recent volatility (change_pct) from signal
+        volatility = signal.get('change_pct', 0.0)
+        
+        order_type = self.determine_order_type(signal['symbol'], price, abs(volatility))
+        limit_price = price if order_type == 'LIMIT' else None
+        
+        order = {
+            'order_id': str(uuid.uuid4())[:8],
+            'symbol': signal['symbol'],
+            'action': 'BUY',
+            'quantity': shares,
+            'order_type': order_type,
+            'limit_price': limit_price, # Only for LIMIT
+            'status': 'PENDING',
+            'timestamp': time.time(),
+            'notes': f"Strategy: {signal['strategy']} | Score: {signal.get('priority_score')}"
+        }
+        
+        return order
+
+    def execute_orders(self, orders: List[Dict[str, Any]]):
+        """
+        Process the orders (Paper Trade Execution).
+        """
+        print(f"\n[EXEC] Processing {len(orders)} Orders...")
+        
+        for order in orders:
+            cost = order['quantity'] * (order['limit_price'] if order['limit_price'] else 0) # Estimates
+            
+            # 1. Validation (Liquidity Check / Cash Check)
+            # (In simulation we assume we calculated size correctly already)
+            
+            # 2. Execution
+            if order['status'] == 'PENDING':
+                print(f"  >>> Sending {order['order_type']} ORDER: Buy {order['quantity']} {order['symbol']} @ {order['limit_price'] if order['limit_price'] else 'Market'} ...")
+                time.sleep(0.5) # Simulate network
+                
+                # 3. Fill Simulation
+                order['status'] = 'FILLED'
+                order['filled_price'] = order['limit_price'] if order['limit_price'] else 100.00 # Mock fill
+                
+                print(f"  [FILLED]: {order['symbol']} (ID: {order['order_id']})")
+                self.orders.append(order)
+                
+                # Update Portfolio
+                qty = self.portfolio.get(order['symbol'], 0)
+                self.portfolio[order['symbol']] = qty + order['quantity']
+                
+                # Update Cash (Simulated)
+                self.cash_balance -= cost
+                print(f"  [CASH] Deducted ${cost:.2f}. New Balance: ${self.cash_balance:.2f}")
+
+        # Save State after batch execution
+        self.save_state()
+
+    def reconcile(self):
+        """
+        Verify internal state matches 'Broker'. 
+        In simulation, we just print the portfolio.
+        """
+        print("\n[EXEC] --- Reconciliation Check ---")
+        print(f"Internal Portfolio Record: {self.portfolio}")
+        print("Broker Status: MATCHED (Simulated)")
+        # In real world, we would call broker_api.get_positions() and compare.
+
+================================================================================
+3.4 Risk Manager (src/risk/risk_manager.py)
+================================================================================
+
+import pandas as pd
+import numpy as np
+from typing import Dict, Any
+
+class RiskManager:
+    def __init__(self, portfolio_value: float, risk_per_trade_pct: float = 1.0):
+        """
+        Manages Position Sizing and Risk Metrics.
+        
+        Args:
+            portfolio_value (float): Total capital available (or Total Equity).
+            risk_per_trade_pct (float): Max risk per trade as % of portfolio (e.g. 1.0 = 1%).
+        """
+        self.portfolio_value = portfolio_value
+        self.risk_pct = risk_per_trade_pct / 100.0
+
+    def calculate_position_size(self, entry_price: float, stop_loss_price: float) -> Dict[str, Any]:
+        """
+        Calculate ideal position size based on risk and stop loss distance.
+        The Golden Rule: Money Risked = (Entry - StopLoss) * NumberOfShares
+        
+        Returns:
+            Dict with 'shares', 'position_value', 'risk_amount', 'actual_risk_pct'
+        """
+        if entry_price <= stop_loss_price:
+             # Stop loss must be below entry for long position
+             # Unless we handle short, but for now we assume Long Only.
+             return {
+                 'shares': 0,
+                 'reason': 'Stop Loss is above or equal to Entry Price (Invalid for Long)'
+             }
+             
+        risk_per_share = entry_price - stop_loss_price
+        max_risk_amount = self.portfolio_value * self.risk_pct
+        
+        # Calculate shares
+        shares = int(max_risk_amount // risk_per_share)
+        
+        # Ensure we don't exceed portfolio cash (Buying Power check)
+        # Though often Risk limits size before buying power does for tight stops.
+        total_cost = shares * entry_price
+        if total_cost > self.portfolio_value:
+            # If cost exceeds cash, we are limited by Cash, not Risk.
+            shares_cash_limit = int(self.portfolio_value // entry_price)
+            shares = shares_cash_limit
+            # In this case, our risk is actually LESS than max_risk_amount
+        
+        position_value = shares * entry_price
+        actual_risk_dollars = shares * risk_per_share
+        
+        return {
+            'shares': shares,
+            'entry': entry_price,
+            'stop_loss': stop_loss_price,
+            'position_value': position_value,
+            'risk_per_share': risk_per_share,
+            'total_risk_dollars': actual_risk_dollars,
+            'risk_pct_of_port': (actual_risk_dollars / self.portfolio_value) * 100
+        }
+
+    def assess_market_regime(self, market_data_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Simple Market Regime Filter using SMA200.
+        market_data_df must contain 'Close' and sufficient history.
+        """
+        if market_data_df.empty or len(market_data_df) < 200:
+            return {'regime': 'Unknown', 'safety_level': 'Neutral'}
+            
+        current_price = market_data_df['Close'].iloc[-1]
+        sma200 = market_data_df['Close'].rolling(window=200).mean().iloc[-1]
+        
+        if current_price > sma200:
+            return {
+                'regime': 'Bullish',
+                'description': 'Price is above 200-day SMA.',
+                'safety_level': 'Safe'
+            }
+        else:
+            return {
+                'regime': 'Bearish',
+                'description': 'Price is below 200-day SMA. Caution advised.',
+                'safety_level': 'Caution'
+            }
+
+================================================================================
+3.5 Dependencies (requirements.txt)
+================================================================================
+
+pandas
+numpy
+yfinance
+schedule
+
+================================================================================
+4. CONFIGURATION DETAILS
+================================================================================
+
+GitHub Repository Settings:
+----------------------------
+Location: Settings → Actions → General → Workflow permissions
+Required: "Read and write permissions" ✅
+
+Environment:
+-----------
+- Python Version: 3.9
+- OS: Ubuntu Latest (GitHub Actions)
+- Timezone: UTC (converted from Thailand GMT+7)
+
+Initial Portfolio:
+-----------------
+- Starting Cash: $50,000 USD
+- Risk Per Trade: 2% of portfolio
+- Position Sizing: Risk-based (calculated from stop loss)
+
+Target Symbols:
+--------------
+SPY, QQQ, NVDA, TSLA, AAPL, MSFT, AMZN, GOOGL, META, AMD
+
+Strategies:
+----------
+- CDC Action Zone (Trend Following)
+- Fibonacci Zone (Mean Reversion)
+
+================================================================================
+5. EXECUTION SCHEDULE
+================================================================================
+
+Schedule: 5 runs per day, Monday - Friday
+Timezone: Thailand (GMT+7)
+
+| Round | Thailand Time | UTC Time | Market Phase      |
+|-------|---------------|----------|-------------------|
+| 1     | 21:35         | 14:35    | Pre-Market        |
+| 2     | 23:05         | 16:05    | Market Open       |
+| 3     | 00:35         | 17:35    | Mid Session       |
+| 4     | 02:05         | 19:05    | Late Session      |
+| 5     | 03:35         | 20:35    | Near Close        |
+
+Cron Expressions:
+- Round 1: '35 14 * * 1-5'
+- Round 2: '5 16 * * 1-5'
+- Round 3: '35 17 * * 1-5'
+- Round 4: '5 19 * * 1-5'
+- Round 5: '35 20 * * 1-5'
+
+Resource Usage:
+- Estimated: 200 minutes/month
+- GitHub Free Tier: 2,000 minutes/month
+- Status: ✅ Well within limits
+
+================================================================================
+6. TROUBLESHOOTING GUIDE
+================================================================================
+
+Problem: Bot not running automatically
+Solution:
+1. Check Settings → Actions → Workflow permissions (must be Read/Write)
+2. Verify workflow file syntax in .github/workflows/phase2_bot.yml
+3. Check GitHub Actions quota (Settings → Billing)
+
+Problem: Import Error "No module named 'src'"
+Solution:
+1. Ensure 'src' folder is uploaded to GitHub
+2. Check run_phase2_gh_action.py path resolution code
+3. View GitHub Actions logs for file listing
+
+Problem: Portfolio state not saving
+Solution:
+1. Verify workflow has write permissions
+2. Check if 'data' folder exists in repo
+3. Review commit step in workflow logs
+4. Ensure GITHUB_TOKEN is available
+
+Problem: Execution fails silently
+Solution:
+1. Go to Actions tab → Click on failed run
+2. Click on "run-market-scan" job
+3. Expand each step to see detailed logs
+4. Look for red X marks and error messages
+
+Problem: Wrong execution time
+Solution:
+1. Remember GitHub Actions uses UTC timezone
+2. Thailand is GMT+7, so subtract 7 hours from desired time
+3. Example: 21:35 Thailand = 14:35 UTC
+4. Update cron expressions in workflow file
+
+================================================================================
+BACKUP INFORMATION
+================================================================================
+
+Backup Date: 2026-01-27 22:14 (Thailand Time)
+Backup Created By: Antigravity AI Assistant
+Phase Status: COMPLETED ✅
+GitHub Actions Status: Successfully Running
+
+Files Included in This Backup:
+1. .github/workflows/phase2_bot.yml
+2. run_phase2_gh_action.py
+3. src/execution/order_manager.py
+4. src/risk/risk_manager.py
+5. requirements.txt
+
+Additional Documentation:
+- ROADMAP.md (updated with Phase 2 completion)
+- PHASE2_SUMMARY.md (comprehensive guide)
+
+GitHub Repository:
+- URL: https://github.com/supakai2024-cyber/supak.git
+- Branch: main
+- Last Successful Run: 2026-01-27
+
+Recovery Instructions:
+1. If files are lost, copy code from sections 3.1-3.5
+2. Recreate folder structure as shown in section 2
+3. Upload to GitHub and verify workflow runs
+4. Check Settings → Actions permissions
+5. Test with manual "Run workflow" trigger
+
+================================================================================
+END OF BACKUP
+================================================================================
