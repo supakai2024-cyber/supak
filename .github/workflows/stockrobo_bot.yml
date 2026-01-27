@@ -31,12 +31,11 @@ jobs:
         run: python run_phase2_gh_action.py
 
       - name: Commit and Push Portfolio State
-        # ถ้าไฟล์ data/portfolio_state.json มีการเปลี่ยนแปลง ให้ Save กลับ
         run: |
           git config --global user.name "StockRobo Bot"
           git config --global user.email "bot@stockrobo.local"
-          git add data/portfolio_state.json
-          git commit -m "Auto-update portfolio state [skip ci]" || echo "No changes to commit"
-          git push
+          git add data/portfolio_state.json || echo "No state file to add"
+          git diff --staged --quiet || git commit -m "Auto-update portfolio state [skip ci]"
+          git diff --staged --quiet || git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
