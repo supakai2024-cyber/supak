@@ -163,10 +163,10 @@ def generate_combined_watchlist():
         json.dump(watchlist_data, f, indent=2)
     
     # แสดงผล
-    print(f"\n✅ Found {len(cdc_opportunities)} CDC signals (Green)")
-    print(f"✅ Found {len(fibo_opportunities)} Fibo signals (50-78.6% zone)")
+    print(f"\n[OK] Found {len(cdc_opportunities)} CDC signals (Green)")
+    print(f"[OK] Found {len(fibo_opportunities)} Fibo signals (50-78.6% zone)")
     
-    print(f"\n🟢 Top 20 CDC Opportunities (Trend Following):")
+    print(f"\n[Trend] Top 20 CDC Opportunities (Trend Following):")
     print("=" * 80)
     print(f"{'#':<3} {'Symbol':<8} {'Price':<10} {'Change%':<10} {'Strength':<12}")
     print("=" * 80)
@@ -174,7 +174,7 @@ def generate_combined_watchlist():
         print(f"{i:<3} {opp['symbol']:<8} ${opp['price']:<9.2f} "
               f"{opp['change_pct']:>+8.2f}% {opp['signal_strength']:<12}")
     
-    print(f"\n🔵 Top 10 Fibo Opportunities (Pullback/Dip Buying):")
+    print(f"\n[Pullback] Top 10 Fibo Opportunities (Pullback/Dip Buying):")
     print("=" * 80)
     print(f"{'#':<3} {'Symbol':<8} {'Price':<10} {'High':<10} {'Retrace%':<12} {'Discount':<12}")
     print("=" * 80)
@@ -184,31 +184,31 @@ def generate_combined_watchlist():
               f"{opp['discount']:<12}")
     
     print("=" * 80)
-    print(f"\n📊 Combined Watchlist: {len(combined_symbols)} symbols")
+    print(f"\n[Summary] Combined Watchlist: {len(combined_symbols)} symbols")
     print(f"   - CDC (Green): {len(top_cdc)} stocks")
     print(f"   - Fibo (Dip): {len([o for o in top_fibo if o['symbol'] not in [c['symbol'] for c in top_cdc]])} stocks (unique)")
     
-    print(f"\n💾 Saved to: data/watchlist.json")
+    print(f"\n[Save] Saved to: data/watchlist.json")
     
     return combined_symbols
 
 if __name__ == "__main__":
     watchlist = generate_combined_watchlist()
     
-    print("\n🎯 Strategy Summary:")
+    print("\n[Strategy] Strategy Summary:")
     print("=" * 80)
     print("CDC (Trend Following):")
-    print("  - หุ้นที่กำลังขึ้น (Green)")
+    print("  - Stocks in Uptrend (Green)")
     print("  - EMA12 > EMA26 AND Price > EMA12")
-    print("  - เหมาะกับ: Momentum Trading")
+    print("  - Suitable for: Momentum Trading")
     print()
     print("Fibo (Mean Reversion):")
-    print("  - หุ้นที่ตกลงมา 50-78.6% จาก High")
-    print("  - รอ Bounce กลับ")
-    print("  - เหมาะกับ: Dip Buying, Value Hunting")
+    print("  - Stocks retraced 50-78.6% from High")
+    print("  - Wait for Bounce")
+    print("  - Suitable for: Dip Buying, Value Hunting")
     print("=" * 80)
     
-    print("\n🎯 Next Steps:")
+    print("\n[Next] Next Steps:")
     print("1. Review the watchlist in data/watchlist.json")
     print("2. Push to GitHub: git add data/watchlist.json && git commit -m 'Update combined watchlist' && git push")
     print("3. Phase 2 bot will trade BOTH strategies (5 rounds/day)")
