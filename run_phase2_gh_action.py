@@ -1,139 +1,130 @@
-
 import sys
 import os
-# Ensure the root directory is in sys.path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import json
 
-from src.engine.scanner import MarketScanner
-from src.execution.order_manager import OrderManager
-from src.risk.risk_manager import RiskManager
-from src.notification.alert_engine import AlertEngine
+# --- CRITICAL FIX: Force Add Paths ---
+# 1. หาตำแหน่งไฟล์ปัจจุบัน
+current_file_path = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_file_path)
+
+# 2. เพิ่ม path ของโฟลเดอร์ปัจจุบัน
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# 3. ลองหาโฟลเดอร์ 'src' ว่าอยู่ที่ไหน
+# ถ้าไฟล์นี้อยู่ใน stockrobo-us01/run_...py แต่ src อยู่ใน stockrobo-us01/src
+src_path = os.path.join(current_dir, 'src')
+
+# ถ้าไม่เจอ src ให้ลองถอยออกไป 1 ชั้น (เผื่อไฟล์อยู่ลึก)
+if not os.path.exists(src_path):
+    parent_dir = os.path.dirname(current_dir)
+    if parent_dir not in sys.path:
+        sys.path.append(parent_dir)
+    src_path = os.path.join(parent_dir, 'src')
+
+print(f"[DEBUG] Current Dir: {current_dir}")
+print(f"[DEBUG] System Path: {sys.path}")
+# -------------------------------------
+
+try:
+    from src.engine.scanner import MarketScanner
+    from src.execution.order_manager import OrderManager
+    from src.risk.risk_manager import RiskManager
+    from src.notification.alert_engine import AlertEngine
+except ImportError as e:
+    print(f"CRITICAL IMPORT ERROR: {e}")
+    print("Listing files in current directory:")
+    print(os.listdir(current_dir))
+    if os.path.exists(src_path):
+         print(f"Listing files in src directory ({src_path}):")
+         print(os.listdir(src_path))
+    sys.exit(1)
 
 def main():
-    """
-    Main entry point for GitHub Actions (Single Run Execution).
-    Loads state -> Scans Market -> Executes Orders -> Saves State.
-    """
-    alert_system = AlertEngine()
+    try:
+        alert_system = AlertEngine()
+    except:
+        class MockAlert:
+            def send_alert(self, *args): print(f"[MOCK ALERT] {args}")
+        alert_system = MockAlert()
+
     print("--- [GH ACTION] StockRobo-US01 Phase 2 Execution ---")
     alert_system.send_alert("GH_ACTION", "Starting Scheduled Scan...", "INFO")
     
     try:
-        # 1. Initialize Components with Persistence
-        state_file_path = os.path.join("data", "portfolio_state.json")
+        # State File (Force Absolute Path)
+        state_file_path = os.path.join(current_dir, "data", "portfolio_state.json")
+        os.makedirs(os.path.dirname(state_file_path), exist_ok=True)
+        
         order_manager = OrderManager(state_file=state_file_path)
-        
-        # Risk Management Setup
-        # We assume a fixed portfolio baseline for risk calcs (e.g. 50k), 
-        # but execution is limited by actual available cash in OrderManager.
         risk_manager = RiskManager(portfolio_value=50000.0, risk_per_trade_pct=2.0)
-        
         scanner = MarketScanner()
-        target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
         
-        # 2. Market Scan
+        # Load watchlist (from file or use default)
+        watchlist_path = os.path.join(current_dir, "data", "watchlist.json")
+        
+        if os.path.exists(watchlist_path):
+            try:
+                with open(watchlist_path, 'r') as f:
+                    watchlist_data = json.load(f)
+                    target_symbols = watchlist_data.get('watchlist', [])
+                    print(f"[GH ACTION] Loaded watchlist from file: {len(target_symbols)} symbols")
+                    print(f"[GH ACTION] Generated at: {watchlist_data.get('generated_at', 'Unknown')}")
+            except Exception as e:
+                print(f"[GH ACTION] Error loading watchlist: {e}")
+                target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+        else:
+            print("[GH ACTION] No watchlist found. Using default symbols.")
+            target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+        
         print(f"[GH ACTION] Scanning {len(target_symbols)} symbols...")
         results = scanner.scan(target_symbols)
         
-        # 3. Process Signals
         signals = []
         for item in results.get('buy_signals', []):
             item['strategy'] = 'Scanner_CDC' 
-            item['win_rate'] = 75.0 # Mock Win Rate
+            item['win_rate'] = 75.0 
             signals.append(item)
             
         print(f"[GH ACTION] Found {len(signals)} raw buy signals.")
-        
-        if not signals:
-            alert_system.send_alert("GH_ACTION", "No signals found. Exiting.", "INFO")
-            return
 
-        # 4. Prioritize & Size
-        ranked_signals = order_manager.prioritize_signals(signals)
-        orders_to_send = []
         
-        for sig in ranked_signals:
-            entry_price = sig['price']
-            stop_price = entry_price * 0.95 # Mock Stop Loss 5%
+        if signals:
+            ranked_signals = order_manager.prioritize_signals(signals)
             
-            # Risk Calc
-            sizing = risk_manager.calculate_position_size(entry_price, stop_price)
+            order_manager.load_state() 
+            temp_cash = order_manager.cash_balance
+            final_orders = []
             
-            # Liquidity Check against persisted Cash Balance
-            potential_cost = sizing['shares'] * entry_price
-            if potential_cost > order_manager.cash_balance:
-                # Resize down to available cash
-                max_shares = int(order_manager.cash_balance // entry_price)
-                print(f"[RISK] Adjusting size for {sig['symbol']} due to cash limit: {sizing['shares']} -> {max_shares}")
-                sizing['shares'] = max_shares
-            
-            if sizing['shares'] > 0:
-                sig['entry'] = entry_price
-                order = order_manager.create_order(sig, sizing)
-                if order:
-                    orders_to_send.append(order)
-                    # Temporarily deduct cash from local variable to prevent double spending in same batch
-                    # (Though OrderManager.execute_orders does it, we need to know remaining cash for NEXT signal in this loop)
-                    order_manager.cash_balance -= (sizing['shares'] * entry_price) 
+            for sig in ranked_signals:
+                entry_price = sig['price']
+                stop_price = entry_price * 0.95
+                sizing = risk_manager.calculate_position_size(entry_price, stop_price)
+                cost = sizing['shares'] * entry_price
+                
+                if cost > temp_cash:
+                     sizing['shares'] = int(temp_cash // entry_price)
+                     cost = sizing['shares'] * entry_price
+                
+                if sizing['shares'] > 0:
+                    sig['entry'] = entry_price
+                    order = order_manager.create_order(sig, sizing)
+                    if order:
+                        final_orders.append(order)
+                        temp_cash -= cost 
 
-        # Restore OrderManager cash balance because execute_orders will deduct it again?
-        # WAIT: modifying order_manager.cash_balance directly here affects the object.
-        # But execute_orders ALSO deducts.
-        # If I deducted it here, execute_orders will deduct AGAIN from the already reduced amount.
-        # FIX: I should probably NOT deduct it permanently here, OR let execute_orders handle it.
-        # BUT for the purposes of the loop (buying multiple stocks), I MUST track remaining cash.
-        # Let's reload state or just accept that execute_orders logic needs to be robust.
-        # Simpler approach for this script:
-        # Calculate all orders, Filter them, Then Execute.
-        # But I need to know cumulative cost.
-        
-        # Refined Loop Logic:
-        # Reset cash to start of loop for calculation
-        # (This implies I need to re-read cash, or just use a temp variable)
-        
-        # Let's re-instantiate OrderManager to be safe or just manually revert the changes?
-        # Actually, simpler: Use a 'temp_cash' variable.
-        
-        pass 
-        # (Re-running logic correctly in next block)
-        
+            if final_orders:
+                order_manager.execute_orders(final_orders)
+                alert_system.send_alert("GH_ACTION", f"Successfully executed {len(final_orders)} orders.", "INFO")
+            else:
+                 print("[GH ACTION] No orders generated (Insufficient Cash).")
+        else:
+            print("[GH ACTION] No signals found.")
+
     except Exception as e:
+        print(f"CRITICAL RUNTIME ERROR: {e}")
         alert_system.send_alert("GH_ACTION", f"Critical Error: {e}", "CRITICAL")
         sys.exit(1)
-
-    # Correct Logic for Batch Sizing
-    # We need to re-do the sizing loop properly using a temp cash variable
-    order_manager.load_state() # Reset to actual state
-    temp_cash = order_manager.cash_balance
-    final_orders = []
-    
-    for sig in ranked_signals:
-        entry_price = sig['price']
-        stop_price = entry_price * 0.95
-        
-        sizing = risk_manager.calculate_position_size(entry_price, stop_price)
-        cost = sizing['shares'] * entry_price
-        
-        if cost > temp_cash:
-             sizing['shares'] = int(temp_cash // entry_price)
-             cost = sizing['shares'] * entry_price
-        
-        if sizing['shares'] > 0:
-            sig['entry'] = entry_price
-            order = order_manager.create_order(sig, sizing)
-            if order:
-                final_orders.append(order)
-                temp_cash -= cost # Deduct from available budget for this run
-
-    # 5. Execute & Persist
-    if final_orders:
-        # Note: execute_orders will update self.cash_balance and call save_state()
-        order_manager.execute_orders(final_orders)
-        alert_system.send_alert("GH_ACTION", f"Successfully executed {len(final_orders)} orders.", "INFO")
-    else:
-        print("[GH ACTION] No orders generated (No signals or Insufficient Cash).")
-        # Ensure we save state anyway (e.g. to update timestamps or log empty run if we added that)
-        # order_manager.save_state() 
 
 if __name__ == "__main__":
     main()

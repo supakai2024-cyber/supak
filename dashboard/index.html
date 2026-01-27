@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockRobo-US01 Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🤖 StockRobo-US01</h1>
+                <p class="subtitle">Automated Trading Dashboard</p>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="status-dot"></span>
+                <span id="statusText">Loading...</span>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <section class="summary-cards">
+            <div class="card">
+                <div class="card-icon">💰</div>
+                <div class="card-content">
+                    <h3>Cash Balance</h3>
+                    <p class="card-value" id="cashBalance">$0.00</p>
+                    <span class="card-label">Available Capital</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-content">
+                    <h3>Portfolio Value</h3>
+                    <p class="card-value" id="portfolioValue">$0.00</p>
+                    <span class="card-label">Total Equity</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📈</div>
+                <div class="card-content">
+                    <h3>Total Return</h3>
+                    <p class="card-value" id="totalReturn">0.00%</p>
+                    <span class="card-label">Since Inception</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">🎯</div>
+                <div class="card-content">
+                    <h3>Active Positions</h3>
+                    <p class="card-value" id="activePositions">0</p>
+                    <span class="card-label">Open Trades</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h2>📈 Portfolio Performance</h2>
+                <canvas id="equityChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>🎯 Win/Loss Distribution</h2>
+                <canvas id="winLossChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Current Positions -->
+        <section class="positions-section">
+            <h2>📊 Current Positions</h2>
+            <div class="table-container">
+                <table id="positionsTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Avg Price</th>
+                            <th>Current Price</th>
+                            <th>P&L</th>
+                            <th>P&L %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">No positions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Recent Trades -->
+        <section class="trades-section">
+            <h2>📋 Recent Trades</h2>
+            <div class="table-container">
+                <table id="tradesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">No trades yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- System Info -->
+        <section class="system-info">
+            <div class="info-card">
+                <h3>⏰ Last Update</h3>
+                <p id="lastUpdate">Never</p>
+            </div>
+            <div class="info-card">
+                <h3>🤖 Next Run</h3>
+                <p id="nextRun">Calculating...</p>
+            </div>
+            <div class="info-card">
+                <h3>📊 Total Trades</h3>
+                <p id="totalTrades">0</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>StockRobo-US01 | Phase 3: Dashboard & Visualization</p>
+            <p class="footer-note">⚠️ Paper Trading Only - No Real Money</p>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
