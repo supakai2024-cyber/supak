@@ -1,87 +1,79 @@
 {
-  "generated_at": "2026-02-06T18:09:10.003832",
+  "generated_at": "2026-02-06T19:40:58.239202",
   "total_scanned": 101,
-  "cdc_signals": 54,
-  "fibo_signals": 12,
+  "cdc_signals": 53,
+  "fibo_signals": 13,
   "watchlist": [
-    "KLAC",
     "LRCX",
     "LI",
     "CAT",
-    "C",
-    "INTC",
     "AMAT",
+    "C",
     "GE",
+    "INTC",
+    "VLO",
     "ASML",
     "TGT",
     "BMY",
-    "VLO",
+    "AMGN",
     "MPC",
     "IWM",
-    "BA",
-    "BAC",
     "SLB",
-    "CMG",
+    "BAC",
     "DE",
-    "PSX",
+    "SBUX",
+    "WMT",
+    "SCHW",
+    "TMUS",
     "RIOT",
     "RIVN",
-    "BLK",
     "NKE",
+    "BLK",
     "META",
     "AVGO",
     "DIS",
-    "NVDA",
-    "OKTA"
+    "NVDA"
   ],
   "cdc_list": [
-    "KLAC",
     "LRCX",
     "LI",
     "CAT",
-    "C",
-    "INTC",
     "AMAT",
+    "C",
     "GE",
+    "INTC",
+    "VLO",
     "ASML",
     "TGT",
     "BMY",
-    "VLO",
+    "AMGN",
     "MPC",
     "IWM",
-    "BA",
-    "BAC",
     "SLB",
-    "CMG",
+    "BAC",
     "DE",
-    "PSX"
+    "SBUX",
+    "WMT",
+    "SCHW"
   ],
   "fibo_list": [
+    "TMUS",
     "RIOT",
     "RIVN",
-    "BLK",
     "LI",
     "NKE",
+    "BLK",
     "META",
     "AVGO",
     "DIS",
-    "NVDA",
-    "OKTA"
+    "NVDA"
   ],
   "details": [
     {
-      "symbol": "KLAC",
-      "strategy": "CDC",
-      "price": 1439.5699462890625,
-      "change_pct": 8.154580633280258,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
       "symbol": "LRCX",
       "strategy": "CDC",
-      "price": 229.7100067138672,
-      "change_pct": 7.688345292286897,
+      "price": 230.6199951171875,
+      "change_pct": 8.114949021008215,
       "color": "Green",
       "signal_strength": "Strong"
     },
@@ -96,146 +88,165 @@
     {
       "symbol": "CAT",
       "strategy": "CDC",
-      "price": 722.510009765625,
-      "change_pct": 6.516196483336244,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "C",
-      "strategy": "CDC",
-      "price": 122.73999786376953,
-      "change_pct": 6.048038819077284,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "INTC",
-      "strategy": "CDC",
-      "price": 51.079898834228516,
-      "change_pct": 5.887017116397369,
+      "price": 721.885009765625,
+      "change_pct": 6.424055721405927,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "AMAT",
       "strategy": "CDC",
-      "price": 321.739990234375,
-      "change_pct": 5.839008049677828,
+      "price": 322.3500061035156,
+      "change_pct": 6.039677771950692,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "C",
+      "strategy": "CDC",
+      "price": 121.875,
+      "change_pct": 5.300675867863419,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "GE",
       "strategy": "CDC",
-      "price": 322.8299865722656,
-      "change_pct": 5.3725859964785805,
+      "price": 321.9186096191406,
+      "change_pct": 5.075110079237926,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
-      "symbol": "ASML",
+      "symbol": "INTC",
       "strategy": "CDC",
-      "price": 1411.97998046875,
-      "change_pct": 4.578712502523618,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "TGT",
-      "strategy": "CDC",
-      "price": 115.7750015258789,
-      "change_pct": 4.442943725351153,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "BMY",
-      "strategy": "CDC",
-      "price": 61.744998931884766,
-      "change_pct": 3.7382366549207062,
+      "price": 50.57500076293945,
+      "change_pct": 4.840379359926401,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "VLO",
       "strategy": "CDC",
-      "price": 201.11500549316406,
-      "change_pct": 3.5927712606594007,
+      "price": 202.7100067138672,
+      "change_pct": 4.414343953415972,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "ASML",
+      "strategy": "CDC",
+      "price": 1409.5400390625,
+      "change_pct": 4.397997524707494,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "TGT",
+      "strategy": "CDC",
+      "price": 115.23999786376953,
+      "change_pct": 3.9603062246981637,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "BMY",
+      "strategy": "CDC",
+      "price": 61.834999084472656,
+      "change_pct": 3.889446587541181,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "AMGN",
+      "strategy": "CDC",
+      "price": 380.739990234375,
+      "change_pct": 3.518217202522057,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "MPC",
       "strategy": "CDC",
-      "price": 202.5749969482422,
-      "change_pct": 3.444311420170696,
+      "price": 202.69500732421875,
+      "change_pct": 3.505594356827203,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "IWM",
       "strategy": "CDC",
-      "price": 264.2349853515625,
-      "change_pct": 3.2853783607672042,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "BA",
-      "strategy": "CDC",
-      "price": 244.6999969482422,
-      "change_pct": 3.2707322641126093,
-      "color": "Green",
-      "signal_strength": "Strong"
-    },
-    {
-      "symbol": "BAC",
-      "strategy": "CDC",
-      "price": 56.73500061035156,
-      "change_pct": 3.2672042746829284,
+      "price": 264.3500061035156,
+      "change_pct": 3.3303381978191076,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "SLB",
       "strategy": "CDC",
-      "price": 51.106998443603516,
-      "change_pct": 3.2256113435894322,
+      "price": 51.064998626708984,
+      "change_pct": 3.1407803633462668,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
-      "symbol": "CMG",
+      "symbol": "BAC",
       "strategy": "CDC",
-      "price": 39.60499954223633,
-      "change_pct": 3.0038979359660662,
+      "price": 56.57500076293945,
+      "change_pct": 2.975977752273942,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
       "symbol": "DE",
       "strategy": "CDC",
-      "price": 580.6199951171875,
-      "change_pct": 2.6320002761918326,
+      "price": 582.4149780273438,
+      "change_pct": 2.9492864325077788,
       "color": "Green",
       "signal_strength": "Strong"
     },
     {
-      "symbol": "PSX",
+      "symbol": "SBUX",
       "strategy": "CDC",
-      "price": 158.4199981689453,
-      "change_pct": 2.583698557534026,
+      "price": 98.83000183105469,
+      "change_pct": 2.8729074060558824,
       "color": "Green",
       "signal_strength": "Strong"
+    },
+    {
+      "symbol": "WMT",
+      "strategy": "CDC",
+      "price": 130.49000549316406,
+      "change_pct": 2.7965991677024307,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "SCHW",
+      "strategy": "CDC",
+      "price": 104.80999755859375,
+      "change_pct": 2.7548995672487746,
+      "color": "Green",
+      "signal_strength": "Strong"
+    },
+    {
+      "symbol": "TMUS",
+      "strategy": "Fibo",
+      "price": 198.4499969482422,
+      "swing_high": 259.35644694079167,
+      "swing_low": 181.36000061035156,
+      "retracement_pct": 78.08875001113888,
+      "fibo_500": 220.35822377557162,
+      "fibo_786": 198.05124012506576,
+      "discount": "Deep"
     },
     {
       "symbol": "RIOT",
       "strategy": "Fibo",
-      "price": 14.145000457763672,
+      "price": 14.364999771118164,
       "swing_high": 23.934999465942383,
       "swing_low": 11.15999984741211,
-      "retracement_pct": 76.63404540520074,
+      "retracement_pct": 74.91193722575798,
       "fibo_500": 17.547499656677246,
       "fibo_786": 13.893849765777588,
       "discount": "Deep"
@@ -243,43 +254,43 @@
     {
       "symbol": "RIVN",
       "strategy": "Fibo",
-      "price": 14.625,
+      "price": 14.845000267028809,
       "swing_high": 22.690000534057617,
       "swing_low": 11.84000015258789,
-      "retracement_pct": 74.33179954381848,
+      "retracement_pct": 72.30414738442742,
       "fibo_500": 17.265000343322754,
       "fibo_786": 14.161900234222411,
       "discount": "Deep"
     },
     {
-      "symbol": "BLK",
-      "strategy": "Fibo",
-      "price": 1050.885009765625,
-      "swing_high": 1214.0307049830408,
-      "swing_low": 985.7817360655371,
-      "retracement_pct": 71.47707873168169,
-      "fibo_500": 1099.906220524289,
-      "fibo_786": 1034.6270154138829,
-      "discount": "Deep"
-    },
-    {
       "symbol": "NKE",
       "strategy": "Fibo",
-      "price": 63.505001068115234,
+      "price": 63.750701904296875,
       "swing_high": 79.24956636256523,
       "swing_low": 56.9900016784668,
-      "retracement_pct": 70.73168553784632,
+      "retracement_pct": 69.62788661065004,
       "fibo_500": 68.11978402051602,
       "fibo_786": 61.75354852086386,
       "discount": "Deep"
     },
     {
+      "symbol": "BLK",
+      "strategy": "Fibo",
+      "price": 1055.18994140625,
+      "swing_high": 1214.0307049830408,
+      "swing_low": 985.7817360655371,
+      "retracement_pct": 69.59101034721466,
+      "fibo_500": 1099.906220524289,
+      "fibo_786": 1034.6270154138829,
+      "discount": "Deep"
+    },
+    {
       "symbol": "META",
       "strategy": "Fibo",
-      "price": 661.47998046875,
+      "price": 660.489990234375,
       "swing_high": 789.6225600448605,
       "swing_low": 580.7763124672824,
-      "retracement_pct": 61.357377047682235,
+      "retracement_pct": 61.83140530811687,
       "fibo_500": 685.1994362560715,
       "fibo_786": 625.4694094488841,
       "discount": "Moderate"
@@ -287,10 +298,10 @@
     {
       "symbol": "AVGO",
       "strategy": "Fibo",
-      "price": 334.010009765625,
+      "price": 332.3599853515625,
       "swing_high": 413.81818763503134,
       "swing_low": 280.85050119502444,
-      "retracement_pct": 60.020731356723,
+      "retracement_pct": 61.26165271005269,
       "fibo_500": 347.3343444150279,
       "fibo_786": 309.3055860931859,
       "discount": "Moderate"
@@ -298,10 +309,10 @@
     {
       "symbol": "DIS",
       "strategy": "Fibo",
-      "price": 108.4800033569336,
+      "price": 108.3949966430664,
       "swing_high": 118.97502746097847,
       "swing_low": 101.20525395013175,
-      "retracement_pct": 59.061102256810884,
+      "retracement_pct": 59.53948040729939,
       "fibo_500": 110.09014070555511,
       "fibo_786": 105.00798548145295,
       "discount": "Moderate"
@@ -309,23 +320,12 @@
     {
       "symbol": "NVDA",
       "strategy": "Fibo",
-      "price": 184.25999450683594,
+      "price": 184.47500610351562,
       "swing_high": 212.1781954922272,
       "swing_low": 164.05163046676552,
-      "retracement_pct": 58.009959718963835,
+      "retracement_pct": 57.563196903944856,
       "fibo_500": 188.11491297949635,
       "fibo_786": 174.3507153822143,
-      "discount": "Moderate"
-    },
-    {
-      "symbol": "OKTA",
-      "strategy": "Fibo",
-      "price": 85.38500213623047,
-      "swing_high": 98.87000274658203,
-      "swing_low": 75.05000305175781,
-      "retracement_pct": 56.61209396774963,
-      "fibo_500": 86.96000289916992,
-      "fibo_786": 80.1474829864502,
       "discount": "Moderate"
     }
   ]
