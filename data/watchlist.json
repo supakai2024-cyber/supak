@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-16T16:57:49.981851",
+  "generated_at": "2026-02-16T18:05:11.650070",
   "total_scanned": 101,
   "cdc_signals": 46,
   "fibo_signals": 21,
@@ -288,11 +288,11 @@
       "symbol": "NKE",
       "strategy": "Fibo",
       "price": 63.130001068115234,
-      "swing_high": 79.24956636256523,
+      "swing_high": 79.24957408832702,
       "swing_low": 56.9900016784668,
-      "retracement_pct": 72.41635460178307,
-      "fibo_500": 68.11978402051602,
-      "fibo_786": 61.75354852086386,
+      "retracement_pct": 72.41636417540245,
+      "fibo_500": 68.11978788339691,
+      "fibo_786": 61.75355017417688,
       "discount": "Deep"
     },
     {
