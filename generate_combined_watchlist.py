@@ -1,6 +1,10 @@
 """
 Combined Watchlist Generator: Top 25 CDC + Fibo Opportunities
 รวมทั้ง Trend Following (CDC) และ Mean Reversion (Fibo)
+
+รอบการทำงาน:
+  - Round 1: 21:35 น. ไทย (14:35 UTC) → Full Scan 500+ หุ้น + สร้าง Watchlist
+  - Round 2: 03:30 น. ไทย (20:30 UTC) → ใช้ Watchlist เดิม (ไม่ต้อง Rescan)
 """
 
 from src.engine.scanner import MarketScanner
@@ -8,7 +12,41 @@ from src.data.market_data import MarketData
 from src.strategies.cdc_action_zone import CDCActionZone
 from src.strategies.fibo_strategy import FiboZoneStrategy
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# ============================================================
+# ⏰ เวลาไทย (UTC+7)
+# ============================================================
+THAI_TZ = timezone(timedelta(hours=7))
+
+def get_thai_time():
+    """คืนเวลาปัจจุบันในเขตเวลาไทย (UTC+7)"""
+    return datetime.now(THAI_TZ)
+
+def is_round1_scan_time(tolerance_minutes=30):
+    """
+    ตรวจสอบว่าเป็นเวลา Round 1 (21:35 น. ไทย) หรือไม่
+    คืนค่า True ถ้าอยู่ในช่วง ±tolerance_minutes จากเวลาเป้าหมาย
+    
+    Round 1 Target: 21:35 น. ไทย → ช่วง 21:05 - 22:05 น.
+    Round 2 Target: 03:30 น. ไทย → ใช้ Watchlist เดิม ไม่ต้อง Rescan
+    """
+    now = get_thai_time()
+    thai_hour = now.hour
+    thai_min = now.minute
+    total_minutes = thai_hour * 60 + thai_min
+    
+    # Target Round 1 = 21:35 น. = 21*60+35 = 1295 นาที
+    target_round1 = 21 * 60 + 35
+    diff = abs(total_minutes - target_round1)
+    
+    is_round1 = diff <= tolerance_minutes
+    
+    print(f"[TIME CHECK] เวลาไทยปัจจุบัน: {now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    print(f"[TIME CHECK] เป้าหมาย Round 1: 21:35 น. ไทย (ค่าเบี่ยงเบน: {diff} นาที, tolerance: ±{tolerance_minutes} นาที)")
+    print(f"[TIME CHECK] → {'✅ Round 1 (Full Scan)' if is_round1 else '⏩ Round 2 (Use Existing Watchlist)'}")
+    
+    return is_round1
 
 # รายชื่อหุ้น 503 ตัว
 ALL_SYMBOLS = [
@@ -193,23 +231,51 @@ def generate_combined_watchlist():
     return combined_symbols
 
 if __name__ == "__main__":
-    watchlist = generate_combined_watchlist()
+    import sys
+    import os
     
-    print("\n[Strategy] Strategy Summary:")
     print("=" * 80)
-    print("CDC (Trend Following):")
-    print("  - Stocks in Uptrend (Green)")
-    print("  - EMA12 > EMA26 AND Price > EMA12")
-    print("  - Suitable for: Momentum Trading")
-    print()
-    print("Fibo (Mean Reversion):")
-    print("  - Stocks retraced 50-78.6% from High")
-    print("  - Wait for Bounce")
-    print("  - Suitable for: Dip Buying, Value Hunting")
+    print("  StockRobo-US01: Smart Round Detection")
     print("=" * 80)
     
-    print("\n[Next] Next Steps:")
-    print("1. Review the watchlist in data/watchlist.json")
-    print("2. Push to GitHub: git add data/watchlist.json && git commit -m 'Update combined watchlist' && git push")
-    print("3. Phase 2 bot will trade BOTH strategies (5 rounds/day)")
-    print("4. Re-run this script daily for fresh opportunities")
+    # ตรวจสอบว่า Force scan หรือไม่ (ส่ง argument "--force-scan" เพื่อ Force)
+    force_scan = "--force-scan" in sys.argv
+    
+    if force_scan:
+        print("[MODE] Force Scan: ข้ามการตรวจสอบเวลา → Full Scan ทันที")
+        watchlist = generate_combined_watchlist()
+    
+    elif is_round1_scan_time(tolerance_minutes=30):
+        # ✅ Round 1: 21:35 น. ไทย → Full Scan + สร้าง Watchlist ใหม่
+        print("\n[ROUND 1] 21:35 น. ไทย → Full Scan 500+ หุ้น + สร้าง Watchlist ใหม่")
+        print("=" * 80)
+        watchlist = generate_combined_watchlist()
+    
+    else:
+        # ⏩ Round 2: 03:30 น. ไทย → ใช้ Watchlist เดิม ไม่ต้อง Rescan
+        print("\n[ROUND 2] 03:30 น. ไทย → ใช้ Watchlist เดิม (ประหยัด API Quota)")
+        print("=" * 80)
+        
+        watchlist_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "watchlist.json")
+        
+        if os.path.exists(watchlist_path):
+            with open(watchlist_path, 'r') as f:
+                watchlist_data = json.load(f)
+            watchlist = watchlist_data.get('watchlist', [])
+            gen_at = watchlist_data.get('generated_at', 'Unknown')
+            print(f"[ROUND 2] ✅ โหลด Watchlist เดิมสำเร็จ: {len(watchlist)} หุ้น")
+            print(f"[ROUND 2] 📅 สร้างเมื่อ: {gen_at}")
+            print(f"[ROUND 2] 📋 รายชื่อ: {', '.join(watchlist[:10])} ...")
+        else:
+            print("[ROUND 2] ⚠️ ไม่พบ watchlist.json → Fallback: Full Scan")
+            watchlist = generate_combined_watchlist()
+    
+    print("\n" + "=" * 80)
+    print("[DONE] Watchlist พร้อมแล้ว!")
+    print(f"[DONE] จำนวนหุ้น: {len(watchlist)} ตัว")
+    print("[DONE] ขั้นตอนถัดไป:")
+    print("  1. Push ไป GitHub: git add data/ && git commit -m 'Update' && git push")
+    print("  2. GitHub Actions จะรัน run_phase2_gh_action.py อัตโนมัติ 2 รอบ/วัน")
+    print("     - Round 1: 21:35 น. ไทย (Full Scan)")
+    print("     - Round 2: 03:30 น. ไทย (Trade Only)")
+    print("=" * 80)
