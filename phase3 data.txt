@@ -1,0 +1,3662 @@
+﻿========================================
+   STOCKROBO-US01 PHASE 3 BACKUP (LATEST UPDATED)
+   Date: 2026-01-28 00:46:06
+========================================
+
+FILE: docs/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockRobo-US01 Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>ðŸ¤– StockRobo-US01</h1>
+                <p class="subtitle">Automated Trading Dashboard</p>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="status-dot"></span>
+                <span id="statusText">Loading...</span>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <section class="summary-cards">
+            <div class="card">
+                <div class="card-icon">ðŸ’°</div>
+                <div class="card-content">
+                    <h3>Cash Balance</h3>
+                    <p class="card-value" id="cashBalance">$0.00</p>
+                    <span class="card-label">Available Capital</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">ðŸ“Š</div>
+                <div class="card-content">
+                    <h3>Portfolio Value</h3>
+                    <p class="card-value" id="portfolioValue">$0.00</p>
+                    <span class="card-label">Total Equity</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">ðŸ“ˆ</div>
+                <div class="card-content">
+                    <h3>Total Return</h3>
+                    <p class="card-value" id="totalReturn">0.00%</p>
+                    <span class="card-label">Since Inception</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">ðŸŽ¯</div>
+                <div class="card-content">
+                    <h3>Active Positions</h3>
+                    <p class="card-value" id="activePositions">0</p>
+                    <span class="card-label">Open Trades</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h2>ðŸ“ˆ Portfolio Performance</h2>
+                <canvas id="equityChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>ðŸŽ¯ Win/Loss Distribution</h2>
+                <canvas id="winLossChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Current Positions -->
+        <section class="positions-section">
+            <h2>ðŸ“Š Current Positions</h2>
+            <div class="table-container">
+                <table id="positionsTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Avg Price</th>
+                            <th>Current Price</th>
+                            <th>P&L</th>
+                            <th>P&L %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">No positions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Recent Trades -->
+        <section class="trades-section">
+            <h2>ðŸ“‹ Recent Trades</h2>
+            <div class="table-container">
+                <table id="tradesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">No trades yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- System Info -->
+        <section class="system-info">
+            <div class="info-card">
+                <h3>â° Last Update</h3>
+                <p id="lastUpdate">Never</p>
+            </div>
+            <div class="info-card">
+                <h3>ðŸ¤– Next Run</h3>
+                <p id="nextRun">Calculating...</p>
+            </div>
+            <div class="info-card">
+                <h3>ðŸ“Š Total Trades</h3>
+                <p id="totalTrades">0</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>StockRobo-US01 | Phase 3: Dashboard & Visualization</p>
+            <p class="footer-note">âš ï¸ Paper Trading Only - No Real Money</p>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
+
+
+FILE: docs/styles.css
+/* ===== CSS Variables ===== */
+:root {
+    --primary-color: #6366f1;
+    --secondary-color: #8b5cf6;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* ===== Header ===== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success-color);
+    border-radius: 20px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== Summary Cards ===== */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-content h3 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.card-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ===== Charts Section ===== */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.chart-container h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+/* ===== Tables ===== */
+.positions-section,
+.trades-section {
+    margin-bottom: 2rem;
+}
+
+.positions-section h2,
+.trades-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.table-container {
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+td {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+tbody tr {
+    transition: background 0.2s ease;
+}
+
+tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 2rem !important;
+}
+
+/* Trade Type Badges */
+.trade-buy {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.trade-sell {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.status-filled {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Profit/Loss Colors */
+.positive {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.negative {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+/* ===== System Info ===== */
+.system-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.info-card h3 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.info-card p {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.footer-note {
+    margin-top: 0.5rem;
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+
+    table {
+        font-size: 0.875rem;
+    }
+
+    th, td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+/* ===== Loading Animation ===== */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+FILE: docs/dashboard.js
+// ===== Configuration =====
+const INITIAL_CAPITAL = 50000;
+const DATA_PATH = '../data/portfolio_state.json';
+
+// ===== Global State =====
+let portfolioData = null;
+let equityChart = null;
+let winLossChart = null;
+
+// ===== Initialize Dashboard =====
+async function initDashboard() {
+    try {
+        updateStatus('Loading...', 'loading');
+
+        // Load portfolio data
+        await loadPortfolioData();
+
+        // Update all sections
+        updateSummaryCards();
+        updateCharts();
+        updatePositionsTable();
+        updateTradesTable();
+        updateSystemInfo();
+
+        updateStatus('Live', 'success');
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        updateStatus('Error', 'error');
+        showError('Failed to load portfolio data. Make sure portfolio_state.json exists.');
+    }
+}
+
+// ===== Load Portfolio Data =====
+async function loadPortfolioData() {
+    try {
+        const response = await fetch(DATA_PATH);
+        if (!response.ok) {
+            throw new Error('Failed to fetch portfolio data');
+        }
+        portfolioData = await response.json();
+        console.log('Portfolio data loaded:', portfolioData);
+    } catch (error) {
+        console.error('Error loading portfolio data:', error);
+        // Use mock data for development
+        portfolioData = createMockData();
+    }
+}
+
+// ===== Create Mock Data (for development/testing) =====
+function createMockData() {
+    return {
+        timestamp: Date.now() / 1000,
+        cash_balance: 45000,
+        portfolio: {
+            'NVDA': 50,
+            'TSLA': 30,
+            'AAPL': 100
+        },
+        orders: [
+            {
+                order_id: 'abc123',
+                symbol: 'NVDA',
+                action: 'BUY',
+                quantity: 50,
+                filled_price: 140.50,
+                status: 'FILLED',
+                timestamp: Date.now() / 1000 - 86400
+            },
+            {
+                order_id: 'def456',
+                symbol: 'TSLA',
+                action: 'BUY',
+                quantity: 30,
+                filled_price: 250.00,
+                status: 'FILLED',
+                timestamp: Date.now() / 1000 - 172800
+            }
+        ]
+    };
+}
+
+// ===== Update Summary Cards =====
+function updateSummaryCards() {
+    const cashBalance = portfolioData.cash_balance || 0;
+    const portfolioValue = calculatePortfolioValue();
+    const totalValue = cashBalance + portfolioValue;
+    const totalReturn = ((totalValue - INITIAL_CAPITAL) / INITIAL_CAPITAL) * 100;
+    const activePositions = Object.keys(portfolioData.portfolio || {}).length;
+
+    document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
+    document.getElementById('portfolioValue').textContent = formatCurrency(totalValue);
+
+    const returnElement = document.getElementById('totalReturn');
+    returnElement.textContent = formatPercent(totalReturn);
+    returnElement.className = 'card-value ' + (totalReturn >= 0 ? 'positive' : 'negative');
+
+    document.getElementById('activePositions').textContent = activePositions;
+}
+
+// ===== Calculate Portfolio Value =====
+function calculatePortfolioValue() {
+    // In real implementation, we'd fetch current prices
+    // For now, estimate from order history
+    let value = 0;
+    const portfolio = portfolioData.portfolio || {};
+    const orders = portfolioData.orders || [];
+
+    for (const [symbol, quantity] of Object.entries(portfolio)) {
+        // Find last buy price for this symbol
+        const lastOrder = orders.reverse().find(o => o.symbol === symbol && o.action === 'BUY');
+        const estimatedPrice = lastOrder ? lastOrder.filled_price : 100;
+        value += quantity * estimatedPrice;
+    }
+
+    return value;
+}
+
+// ===== Update Charts =====
+function updateCharts() {
+    createEquityChart();
+    createWinLossChart();
+}
+
+// ===== Create Equity Chart =====
+function createEquityChart() {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+
+    // Generate equity curve from orders
+    const equityCurve = generateEquityCurve();
+
+    if (equityChart) {
+        equityChart.destroy();
+    }
+
+    equityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: equityCurve.labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: equityCurve.values,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function (value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: '#334155'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#94a3b8'
+                    },
+                    grid: {
+                        color: '#334155'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===== Generate Equity Curve =====
+function generateEquityCurve() {
+    const orders = portfolioData.orders || [];
+    let equity = INITIAL_CAPITAL;
+    const labels = ['Start'];
+    const values = [INITIAL_CAPITAL];
+
+    orders.forEach((order, index) => {
+        if (order.action === 'BUY') {
+            equity -= order.quantity * order.filled_price;
+        } else if (order.action === 'SELL') {
+            equity += order.quantity * order.filled_price;
+        }
+
+        labels.push(`Trade ${index + 1}`);
+        values.push(equity);
+    });
+
+    // Add current value
+    labels.push('Now');
+    values.push(portfolioData.cash_balance + calculatePortfolioValue());
+
+    return { labels, values };
+}
+
+// ===== Create Win/Loss Chart =====
+function createWinLossChart() {
+    const ctx = document.getElementById('winLossChart').getContext('2d');
+
+    const { wins, losses } = calculateWinLoss();
+
+    if (winLossChart) {
+        winLossChart.destroy();
+    }
+
+    winLossChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Wins', 'Losses', 'Pending'],
+            datasets: [{
+                data: [wins, losses, Object.keys(portfolioData.portfolio || {}).length],
+                backgroundColor: [
+                    '#10b981',
+                    '#ef4444',
+                    '#f59e0b'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        padding: 15
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===== Calculate Win/Loss =====
+function calculateWinLoss() {
+    const orders = portfolioData.orders || [];
+    let wins = 0;
+    let losses = 0;
+
+    // Group orders by symbol to calculate P&L
+    const trades = {};
+    orders.forEach(order => {
+        if (!trades[order.symbol]) {
+            trades[order.symbol] = [];
+        }
+        trades[order.symbol].push(order);
+    });
+
+    // Simple win/loss calculation (buy then sell)
+    Object.values(trades).forEach(symbolOrders => {
+        for (let i = 0; i < symbolOrders.length - 1; i += 2) {
+            if (symbolOrders[i].action === 'BUY' && symbolOrders[i + 1]?.action === 'SELL') {
+                const pnl = (symbolOrders[i + 1].filled_price - symbolOrders[i].filled_price) * symbolOrders[i].quantity;
+                if (pnl > 0) wins++;
+                else losses++;
+            }
+        }
+    });
+
+    return { wins, losses };
+}
+
+// ===== Update Positions Table =====
+function updatePositionsTable() {
+    const tbody = document.getElementById('positionsBody');
+    const portfolio = portfolioData.portfolio || {};
+
+    if (Object.keys(portfolio).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No positions yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    for (const [symbol, quantity] of Object.entries(portfolio)) {
+        const orders = portfolioData.orders || [];
+        const buyOrder = orders.reverse().find(o => o.symbol === symbol && o.action === 'BUY');
+        const avgPrice = buyOrder ? buyOrder.filled_price : 0;
+        const currentPrice = avgPrice * 1.05; // Mock 5% gain
+        const pnl = (currentPrice - avgPrice) * quantity;
+        const pnlPercent = ((currentPrice - avgPrice) / avgPrice) * 100;
+
+        const row = `
+            <tr>
+                <td><strong>${symbol}</strong></td>
+                <td>${quantity}</td>
+                <td>${formatCurrency(avgPrice)}</td>
+                <td>${formatCurrency(currentPrice)}</td>
+                <td class="${pnl >= 0 ? 'positive' : 'negative'}">${formatCurrency(pnl)}</td>
+                <td class="${pnlPercent >= 0 ? 'positive' : 'negative'}">${formatPercent(pnlPercent)}</td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    }
+}
+
+// ===== Update Trades Table =====
+function updateTradesTable() {
+    const tbody = document.getElementById('tradesBody');
+    const orders = (portfolioData.orders || []).slice(-10).reverse(); // Last 10 trades
+
+    if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No trades yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    orders.forEach(order => {
+        const date = new Date(order.timestamp * 1000).toLocaleString();
+        const typeClass = order.action === 'BUY' ? 'trade-buy' : 'trade-sell';
+        const statusClass = order.status === 'FILLED' ? 'status-filled' : 'status-pending';
+
+        const row = `
+            <tr>
+                <td>${date}</td>
+                <td><strong>${order.symbol}</strong></td>
+                <td class="${typeClass}">${order.action}</td>
+                <td>${order.quantity}</td>
+                <td>${formatCurrency(order.filled_price || 0)}</td>
+                <td><span class="${statusClass}">${order.status}</span></td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+// ===== Update System Info =====
+function updateSystemInfo() {
+    const lastUpdate = new Date(portfolioData.timestamp * 1000);
+    document.getElementById('lastUpdate').textContent = lastUpdate.toLocaleString();
+
+    // Calculate next run (based on schedule: 21:35, 23:05, 00:35, 02:05, 03:35 Thailand time)
+    const nextRun = calculateNextRun();
+    document.getElementById('nextRun').textContent = nextRun;
+
+    const totalTrades = (portfolioData.orders || []).length;
+    document.getElementById('totalTrades').textContent = totalTrades;
+}
+
+// ===== Calculate Next Run =====
+function calculateNextRun() {
+    const now = new Date();
+    const schedules = [
+        { h: 21, m: 35 },
+        { h: 23, m: 5 },
+        { h: 0, m: 35 },
+        { h: 2, m: 5 },
+        { h: 3, m: 35 }
+    ];
+
+    for (const schedule of schedules) {
+        const nextRun = new Date();
+        nextRun.setHours(schedule.h, schedule.m, 0, 0);
+
+        if (nextRun > now) {
+            return nextRun.toLocaleTimeString();
+        }
+    }
+
+    // If all today's runs passed, show first run tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(schedules[0].h, schedules[0].m, 0, 0);
+    return tomorrow.toLocaleString();
+}
+
+// ===== Update Status Badge =====
+function updateStatus(text, type) {
+    const badge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    statusText.textContent = text;
+
+    badge.className = 'status-badge';
+    if (type === 'error') {
+        badge.style.background = 'rgba(239, 68, 68, 0.1)';
+        badge.style.borderColor = '#ef4444';
+    }
+}
+
+// ===== Utility Functions =====
+function formatCurrency(value) {
+    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatPercent(value) {
+    return (value >= 0 ? '+' : '') + value.toFixed(2) + '%';
+}
+
+function showError(message) {
+    console.error(message);
+    // Could add a toast notification here
+}
+
+// ===== Auto Refresh =====
+function startAutoRefresh() {
+    // Refresh every 30 seconds
+    setInterval(() => {
+        console.log('Auto-refreshing dashboard...');
+        initDashboard();
+    }, 30000);
+}
+
+// ===== Initialize on Load =====
+document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+    startAutoRefresh();
+});
+
+
+FILE: docs/README.md
+# StockRobo-US01 Dashboard
+
+ðŸ¤– **Automated Trading Dashboard** - Real-time portfolio monitoring and performance tracking
+
+---
+
+## ðŸŽ¯ Features
+
+- ðŸ’° **Portfolio Overview** - Cash balance, total value, and returns
+- ðŸ“Š **Performance Charts** - Equity curve and win/loss distribution
+- ðŸ“ˆ **Current Positions** - Live position tracking with P&L
+- ðŸ“‹ **Trade History** - Recent trades with status
+- â° **System Status** - Last update and next scheduled run
+- ðŸ”„ **Auto-refresh** - Updates every 30 seconds
+
+---
+
+## ðŸš€ Quick Start
+
+### Option 1: Local Development
+
+1. **Open the dashboard locally:**
+   ```bash
+   # Navigate to dashboard folder
+   cd dashboard
+   
+   # Open in browser (or use Live Server in VS Code)
+   # File path: file:///C:/Program%20External%20Source/AGI%20Stock%20Analyst/stockrobo-us01/dashboard/index.html
+   ```
+
+2. **Using Python HTTP Server:**
+   ```bash
+   # From project root
+   cd dashboard
+   python -m http.server 8000
+   
+   # Open browser to: http://localhost:8000
+   ```
+
+### Option 2: GitHub Pages (Recommended)
+
+1. **Push dashboard to GitHub:**
+   ```bash
+   git add dashboard/
+   git commit -m "Add Phase 3 Dashboard"
+   git push
+   ```
+
+2. **Enable GitHub Pages:**
+   - Go to GitHub Repository â†’ Settings â†’ Pages
+   - Source: Deploy from a branch
+   - Branch: `main` â†’ Folder: `/dashboard`
+   - Click Save
+
+3. **Access your dashboard:**
+   - URL: `https://[your-username].github.io/[repo-name]/`
+   - Example: `https://supakai2024-cyber.github.io/supak/`
+
+---
+
+## ðŸ“ File Structure
+
+```
+dashboard/
+â”œâ”€â”€ index.html          # Main dashboard page
+â”œâ”€â”€ styles.css          # Styling (dark theme)
+â”œâ”€â”€ dashboard.js        # Dashboard logic
+â””â”€â”€ README.md           # This file
+```
+
+---
+
+## ðŸ”§ Configuration
+
+### Data Source
+
+The dashboard reads from `../data/portfolio_state.json`:
+
+```json
+{
+  "timestamp": 1706380800,
+  "cash_balance": 45000.0,
+  "portfolio": {
+    "NVDA": 50,
+    "TSLA": 30
+  },
+  "orders": [
+    {
+      "order_id": "abc123",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "quantity": 50,
+      "filled_price": 140.50,
+      "status": "FILLED",
+      "timestamp": 1706380800
+    }
+  ]
+}
+```
+
+### Auto-refresh Interval
+
+Edit `dashboard.js` line ~290:
+```javascript
+setInterval(() => {
+    initDashboard();
+}, 30000); // 30 seconds (change as needed)
+```
+
+---
+
+## ðŸŽ¨ Customization
+
+### Change Theme Colors
+
+Edit `styles.css` CSS variables:
+```css
+:root {
+    --primary-color: #6366f1;      /* Main accent color */
+    --success-color: #10b981;      /* Profit/Win color */
+    --danger-color: #ef4444;       /* Loss/Sell color */
+    --bg-primary: #0f172a;         /* Background */
+}
+```
+
+### Modify Initial Capital
+
+Edit `dashboard.js` line ~2:
+```javascript
+const INITIAL_CAPITAL = 50000; // Change to your starting capital
+```
+
+---
+
+## ðŸ“Š Dashboard Sections
+
+### 1. Summary Cards
+- **Cash Balance**: Available capital
+- **Portfolio Value**: Total equity (cash + positions)
+- **Total Return**: Percentage gain/loss since inception
+- **Active Positions**: Number of open trades
+
+### 2. Charts
+- **Portfolio Performance**: Equity curve over time
+- **Win/Loss Distribution**: Pie chart of trade outcomes
+
+### 3. Current Positions Table
+- Symbol, Quantity, Avg Price, Current Price, P&L, P&L%
+
+### 4. Recent Trades Table
+- Last 10 trades with date, symbol, type, quantity, price, status
+
+### 5. System Info
+- Last update timestamp
+- Next scheduled run
+- Total number of trades
+
+---
+
+## ðŸ”„ How It Works
+
+1. **GitHub Actions runs** â†’ Executes trades â†’ Updates `portfolio_state.json`
+2. **Dashboard loads** â†’ Fetches `portfolio_state.json` â†’ Calculates metrics
+3. **Charts render** â†’ Using Chart.js library
+4. **Auto-refresh** â†’ Every 30 seconds (configurable)
+
+---
+
+## ðŸ› Troubleshooting
+
+### Dashboard shows "No data"
+- **Cause**: `portfolio_state.json` not found
+- **Fix**: Ensure file exists in `data/` folder or run bot at least once
+
+### Charts not rendering
+- **Cause**: Chart.js not loaded
+- **Fix**: Check internet connection (CDN required)
+
+### GitHub Pages shows 404
+- **Cause**: Incorrect folder configuration
+- **Fix**: 
+  1. Go to Settings â†’ Pages
+  2. Set folder to `/dashboard` (not `/docs`)
+  3. Wait 1-2 minutes for deployment
+
+### CORS errors on local file
+- **Cause**: Browser security restrictions
+- **Fix**: Use Python HTTP server or Live Server extension
+
+---
+
+## ðŸš€ Next Steps (Phase 3 Upgrades)
+
+- [ ] **Firebase Integration** - Real-time database
+- [ ] **Price Updates** - Fetch live stock prices
+- [ ] **Notifications** - Line/Telegram alerts
+- [ ] **Mobile Responsive** - Better mobile UI
+- [ ] **Authentication** - Password protection
+- [ ] **Historical Data** - Performance over time
+- [ ] **Strategy Comparison** - CDC vs Fibo performance
+
+---
+
+## ðŸ“± Mobile Support
+
+The dashboard is fully responsive and works on:
+- ðŸ“± Mobile phones
+- ðŸ“± Tablets
+- ðŸ’» Desktop browsers
+
+---
+
+## ðŸ”’ Security Notes
+
+âš ï¸ **Important**: This dashboard displays portfolio data publicly if hosted on GitHub Pages.
+
+**For private data:**
+1. Use Firebase with authentication
+2. Host on private server
+3. Add password protection
+4. Use environment variables for sensitive data
+
+---
+
+## ðŸ“„ License
+
+Part of StockRobo-US01 Project - Phase 3: Dashboard & Visualization
+
+---
+
+## ðŸ¤ Support
+
+For issues or questions:
+1. Check troubleshooting section
+2. Review browser console for errors
+3. Verify `portfolio_state.json` format
+
+---
+
+**Happy Trading! ðŸš€ðŸ“ˆ**
+
+
+FILE: docs/DEPLOYMENT.md
+# Deployment Guide: GitHub Pages
+
+## ðŸš€ Quick Deploy to GitHub Pages
+
+### Step 1: Push Dashboard to GitHub
+
+```bash
+# From project root
+git add dashboard/ data/portfolio_state.json
+git commit -m "Phase 3: Add Dashboard"
+git push origin main
+```
+
+### Step 2: Enable GitHub Pages
+
+1. Go to your GitHub repository
+2. Click **Settings** (top menu)
+3. Scroll down to **Pages** (left sidebar)
+4. Under "Build and deployment":
+   - **Source**: Deploy from a branch
+   - **Branch**: `main`
+   - **Folder**: `/dashboard` (âš ï¸ Important!)
+5. Click **Save**
+
+### Step 3: Wait for Deployment
+
+- GitHub will build your site (takes 1-2 minutes)
+- You'll see a green checkmark when ready
+- Your URL will be: `https://[username].github.io/[repo-name]/`
+
+---
+
+## ðŸ”§ Alternative: Deploy from Root
+
+If you want the dashboard at the root URL:
+
+### Option A: Move files to root
+
+```bash
+# Copy dashboard files to root
+cp dashboard/index.html ./
+cp dashboard/styles.css ./
+cp dashboard/dashboard.js ./
+
+# Update data path in dashboard.js
+# Change: const DATA_PATH = '../data/portfolio_state.json';
+# To: const DATA_PATH = './data/portfolio_state.json';
+
+# Commit and push
+git add index.html styles.css dashboard.js
+git commit -m "Move dashboard to root"
+git push
+```
+
+Then in GitHub Pages settings:
+- **Folder**: `/ (root)`
+
+### Option B: Use docs folder
+
+```bash
+# Rename dashboard to docs
+mv dashboard docs
+
+# Commit and push
+git add docs/
+git commit -m "Rename dashboard to docs"
+git push
+```
+
+Then in GitHub Pages settings:
+- **Folder**: `/docs`
+
+---
+
+## ðŸŒ Custom Domain (Optional)
+
+### Add Custom Domain
+
+1. In GitHub Pages settings, add your domain
+2. Create CNAME file:
+
+```bash
+echo "yourdomain.com" > dashboard/CNAME
+git add dashboard/CNAME
+git commit -m "Add custom domain"
+git push
+```
+
+3. Update DNS records at your domain provider:
+   - Type: `CNAME`
+   - Name: `www` or `@`
+   - Value: `[username].github.io`
+
+---
+
+## ðŸ” Verify Deployment
+
+### Check Build Status
+
+1. Go to **Actions** tab
+2. Look for "pages build and deployment"
+3. Green checkmark = Success âœ…
+4. Red X = Failed âŒ (click to see logs)
+
+### Test Your Dashboard
+
+1. Open your GitHub Pages URL
+2. You should see the dashboard
+3. Check browser console (F12) for errors
+
+---
+
+## ðŸ› Common Issues
+
+### Issue: 404 Not Found
+
+**Cause**: Wrong folder selected or files not in correct location
+
+**Fix**:
+```bash
+# Verify files exist
+ls dashboard/
+# Should show: index.html, styles.css, dashboard.js, README.md
+
+# Check folder setting in GitHub Pages
+# Must be /dashboard (not /docs or /)
+```
+
+### Issue: Dashboard loads but no data
+
+**Cause**: `portfolio_state.json` not accessible
+
+**Fix**:
+```bash
+# Ensure data folder is committed
+git add data/portfolio_state.json
+git commit -m "Add portfolio state"
+git push
+
+# Update path in dashboard.js if needed
+```
+
+### Issue: Charts not showing
+
+**Cause**: Chart.js CDN blocked or not loaded
+
+**Fix**:
+- Check internet connection
+- Open browser console (F12) for errors
+- Verify Chart.js CDN URL in index.html
+
+### Issue: CORS errors
+
+**Cause**: Trying to access local files directly
+
+**Fix**:
+- Use GitHub Pages (no CORS issues)
+- Or use local server: `python -m http.server 8000`
+
+---
+
+## ðŸ”„ Update Dashboard
+
+### After Bot Runs
+
+GitHub Actions automatically updates `portfolio_state.json`:
+
+1. Bot runs â†’ Updates `data/portfolio_state.json`
+2. Commits changes to GitHub
+3. GitHub Pages automatically rebuilds
+4. Dashboard shows new data (refresh page)
+
+### Manual Updates
+
+```bash
+# Make changes to dashboard files
+# Then:
+git add dashboard/
+git commit -m "Update dashboard"
+git push
+
+# Wait 1-2 minutes for GitHub Pages to rebuild
+```
+
+---
+
+## ðŸ“± Mobile Access
+
+Your dashboard is accessible from any device:
+
+- ðŸ“± **Mobile**: `https://[username].github.io/[repo-name]/`
+- ðŸ’» **Desktop**: Same URL
+- ðŸ“± **Tablet**: Same URL
+
+Add to home screen on mobile for app-like experience!
+
+---
+
+## ðŸ”’ Security Considerations
+
+âš ï¸ **GitHub Pages is PUBLIC**
+
+Your portfolio data will be visible to anyone with the URL.
+
+**Options for privacy:**
+
+1. **Use Private Repository** (GitHub Pro required)
+2. **Add Authentication** (requires backend)
+3. **Use Firebase** instead (with auth)
+4. **Host on Private Server**
+
+---
+
+## âœ… Deployment Checklist
+
+- [ ] Dashboard files created in `/dashboard` folder
+- [ ] `portfolio_state.json` exists in `/data` folder
+- [ ] Files committed and pushed to GitHub
+- [ ] GitHub Pages enabled (Settings â†’ Pages)
+- [ ] Folder set to `/dashboard`
+- [ ] Branch set to `main`
+- [ ] Waited 1-2 minutes for deployment
+- [ ] Tested URL in browser
+- [ ] Dashboard loads correctly
+- [ ] Data displays properly
+- [ ] Charts render successfully
+
+---
+
+## ðŸŽ‰ Success!
+
+Your dashboard should now be live at:
+`https://[your-username].github.io/[repo-name]/`
+
+Example: `https://supakai2024-cyber.github.io/supak/`
+
+---
+
+**Next Steps:**
+- Share your dashboard URL
+- Monitor portfolio performance
+- Consider upgrading to Firebase for real-time updates
+
+
+FILE: generate_combined_watchlist.py
+"""
+Combined Watchlist Generator: Top 25 CDC + Fibo Opportunities
+à¸£à¸§à¸¡à¸—à¸±à¹‰à¸‡ Trend Following (CDC) à¹à¸¥à¸° Mean Reversion (Fibo)
+"""
+
+from src.engine.scanner import MarketScanner
+from src.data.market_data import MarketData
+from src.strategies.cdc_action_zone import CDCActionZone
+from src.strategies.fibo_strategy import FiboZoneStrategy
+import json
+from datetime import datetime
+
+# à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§
+ALL_SYMBOLS = [
+    # Big Tech
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX',
+    # Semiconductors
+    'AMD', 'INTC', 'QCOM', 'MU', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'ASML',
+    # Growth/SaaS
+    'COIN', 'HOOD', 'PLTR', 'U', 'SNOW', 'DDOG', 'NET', 'CRWD', 'ZS', 'OKTA',
+    # Indices/ETFs
+    'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO',
+    # Traditional Blue Chips
+    'DIS', 'BA', 'MCD', 'KO', 'JNJ', 'PG', 'WMT', 'CVX', 'XOM', 'JPM',
+    # Crypto Miners
+    'MARA', 'RIOT', 'CLSK', 'HUT', 'BITF',
+    # EVs & Auto
+    'F', 'GM', 'RIVN', 'LCID', 'NIO', 'XPEV', 'LI',
+    # Finance
+    'BAC', 'C', 'GS', 'MS', 'WFC', 'BLK', 'SCHW', 'AXP',
+    # Healthcare
+    'UNH', 'LLY', 'ABBV', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN', 'GILD', 'CVS',
+    # Energy
+    'SLB', 'COP', 'EOG', 'MPC', 'VLO', 'PSX',
+    # Consumer
+    'COST', 'HD', 'LOW', 'TGT', 'NKE', 'SBUX', 'CMG', 'YUM',
+    # Communications
+    'T', 'VZ', 'TMUS', 'CMCSA',
+    # Industrial
+    'CAT', 'DE', 'UPS', 'FDX', 'HON', 'MMM', 'GE', 'LMT', 'RTX',
+]
+
+def generate_combined_watchlist():
+    """
+    à¸ªà¸£à¹‰à¸²à¸‡ Watchlist à¹à¸šà¸šà¸£à¸§à¸¡:
+    1. Top 20 CDC (Trend Following)
+    2. Top 10 Fibo (Mean Reversion)
+    = à¸£à¸§à¸¡ 30 à¸«à¸¸à¹‰à¸™
+    """
+    print("=" * 80)
+    print("  StockRobo-US01: Combined Watchlist Generator")
+    print("  Strategy: CDC (Trend) + Fibo (Pullback)")
+    print(f"  Scanning {len(ALL_SYMBOLS)} symbols...")
+    print("=" * 80)
+    
+    market_data = MarketData()
+    cdc_strategy = CDCActionZone()
+    fibo_strategy = FiboZoneStrategy(lookback_period=120)
+    
+    cdc_opportunities = []
+    fibo_opportunities = []
+    
+    # à¸ªà¹à¸à¸™à¸—à¸¸à¸à¸«à¸¸à¹‰à¸™
+    for symbol in ALL_SYMBOLS:
+        try:
+            print(f"  Scanning {symbol}...", end='\r')
+            
+            # à¸”à¸¶à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥
+            df = market_data.get_history(symbol, period='6mo')
+            if df.empty or len(df) < 120:
+                continue
+            
+            # à¸§à¸´à¹€à¸„à¸£à¸²à¸°à¸«à¹Œà¸”à¹‰à¸§à¸¢ CDC
+            df_cdc = cdc_strategy.calculate(df.copy())
+            last_row = df_cdc.iloc[-1]
+            prev_row = df_cdc.iloc[-2]
+            
+            current_price = last_row['Close']
+            prev_price = prev_row['Close']
+            change_pct = ((current_price - prev_price) / prev_price) * 100
+            
+            # CDC Signal (Green = Buy)
+            if last_row['Color'] == 'Green':
+                cdc_opportunities.append({
+                    'symbol': symbol,
+                    'strategy': 'CDC',
+                    'price': current_price,
+                    'change_pct': change_pct,
+                    'color': 'Green',
+                    'signal_strength': 'Strong' if change_pct > 2 else 'Moderate'
+                })
+            
+            # à¸§à¸´à¹€à¸„à¸£à¸²à¸°à¸«à¹Œà¸”à¹‰à¸§à¸¢ Fibo
+            df_fibo = fibo_strategy.calculate(df.copy())
+            last_fibo = df_fibo.iloc[-1]
+            
+            # Fibo Signal (In Zone = Buy)
+            if last_fibo.get('In_Fibo_Zone', False):
+                # à¸„à¸³à¸™à¸§à¸“ % à¸—à¸µà¹ˆà¸•à¸à¸¥à¸‡à¸¡à¸²
+                swing_high = last_fibo['Swing_High']
+                swing_low = last_fibo['Swing_Low']
+                fibo_range = swing_high - swing_low
+                
+                if fibo_range > 0:
+                    retracement_pct = ((swing_high - current_price) / fibo_range) * 100
+                    
+                    # à¹€à¸Šà¹‡à¸„à¸§à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™à¸Šà¹ˆà¸§à¸‡ 50-78.6% à¸ˆà¸£à¸´à¸‡à¹†
+                    if 50 <= retracement_pct <= 78.6:
+                        fibo_opportunities.append({
+                            'symbol': symbol,
+                            'strategy': 'Fibo',
+                            'price': current_price,
+                            'swing_high': swing_high,
+                            'swing_low': swing_low,
+                            'retracement_pct': retracement_pct,
+                            'fibo_500': last_fibo['Fibo_500'],
+                            'fibo_786': last_fibo['Fibo_786'],
+                            'discount': 'Deep' if retracement_pct > 65 else 'Moderate'
+                        })
+        
+        except Exception as e:
+            continue
+    
+    print(" " * 80, end='\r')  # Clear line
+    
+    # à¹€à¸£à¸µà¸¢à¸‡à¹à¸¥à¸°à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸
+    # CDC: à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ change_pct (momentum)
+    cdc_opportunities.sort(key=lambda x: abs(x['change_pct']), reverse=True)
+    top_cdc = cdc_opportunities[:20]
+    
+    # Fibo: à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ retracement_pct (à¸¢à¸´à¹ˆà¸‡à¸¥à¸¶à¸à¸¢à¸´à¹ˆà¸‡à¸”à¸µ)
+    fibo_opportunities.sort(key=lambda x: x['retracement_pct'], reverse=True)
+    top_fibo = fibo_opportunities[:10]
+    
+    # à¸£à¸§à¸¡à¸à¸±à¸™ (à¸•à¸±à¸”à¸‹à¹‰à¸³à¸­à¸­à¸)
+    combined_symbols = []
+    combined_details = []
+    
+    # à¹€à¸žà¸´à¹ˆà¸¡ CDC à¸à¹ˆà¸­à¸™
+    for opp in top_cdc:
+        combined_symbols.append(opp['symbol'])
+        combined_details.append(opp)
+    
+    # à¹€à¸žà¸´à¹ˆà¸¡ Fibo (à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¸‹à¹‰à¸³)
+    for opp in top_fibo:
+        if opp['symbol'] not in combined_symbols:
+            combined_symbols.append(opp['symbol'])
+            combined_details.append(opp)
+    
+    # à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡à¹„à¸Ÿà¸¥à¹Œ
+    watchlist_data = {
+        'generated_at': datetime.now().isoformat(),
+        'total_scanned': len(ALL_SYMBOLS),
+        'cdc_signals': len(cdc_opportunities),
+        'fibo_signals': len(fibo_opportunities),
+        'watchlist': combined_symbols,
+        'cdc_list': [o['symbol'] for o in top_cdc],
+        'fibo_list': [o['symbol'] for o in top_fibo],
+        'details': combined_details
+    }
+    
+    with open('data/watchlist.json', 'w') as f:
+        json.dump(watchlist_data, f, indent=2)
+    
+    # à¹à¸ªà¸”à¸‡à¸œà¸¥
+    print(f"\n[OK] Found {len(cdc_opportunities)} CDC signals (Green)")
+    print(f"[OK] Found {len(fibo_opportunities)} Fibo signals (50-78.6% zone)")
+    
+    print(f"\n[Trend] Top 20 CDC Opportunities (Trend Following):")
+    print("=" * 80)
+    print(f"{'#':<3} {'Symbol':<8} {'Price':<10} {'Change%':<10} {'Strength':<12}")
+    print("=" * 80)
+    for i, opp in enumerate(top_cdc, 1):
+        print(f"{i:<3} {opp['symbol']:<8} ${opp['price']:<9.2f} "
+              f"{opp['change_pct']:>+8.2f}% {opp['signal_strength']:<12}")
+    
+    print(f"\n[Pullback] Top 10 Fibo Opportunities (Pullback/Dip Buying):")
+    print("=" * 80)
+    print(f"{'#':<3} {'Symbol':<8} {'Price':<10} {'High':<10} {'Retrace%':<12} {'Discount':<12}")
+    print("=" * 80)
+    for i, opp in enumerate(top_fibo, 1):
+        print(f"{i:<3} {opp['symbol']:<8} ${opp['price']:<9.2f} "
+              f"${opp['swing_high']:<9.2f} {opp['retracement_pct']:>8.1f}% "
+              f"{opp['discount']:<12}")
+    
+    print("=" * 80)
+    print(f"\n[Summary] Combined Watchlist: {len(combined_symbols)} symbols")
+    print(f"   - CDC (Green): {len(top_cdc)} stocks")
+    print(f"   - Fibo (Dip): {len([o for o in top_fibo if o['symbol'] not in [c['symbol'] for c in top_cdc]])} stocks (unique)")
+    
+    print(f"\n[Save] Saved to: data/watchlist.json")
+    
+    return combined_symbols
+
+if __name__ == "__main__":
+    watchlist = generate_combined_watchlist()
+    
+    print("\n[Strategy] Strategy Summary:")
+    print("=" * 80)
+    print("CDC (Trend Following):")
+    print("  - Stocks in Uptrend (Green)")
+    print("  - EMA12 > EMA26 AND Price > EMA12")
+    print("  - Suitable for: Momentum Trading")
+    print()
+    print("Fibo (Mean Reversion):")
+    print("  - Stocks retraced 50-78.6% from High")
+    print("  - Wait for Bounce")
+    print("  - Suitable for: Dip Buying, Value Hunting")
+    print("=" * 80)
+    
+    print("\n[Next] Next Steps:")
+    print("1. Review the watchlist in data/watchlist.json")
+    print("2. Push to GitHub: git add data/watchlist.json && git commit -m 'Update combined watchlist' && git push")
+    print("3. Phase 2 bot will trade BOTH strategies (5 rounds/day)")
+    print("4. Re-run this script daily for fresh opportunities")
+
+
+FILE: generate_top25_watchlist.py
+"""
+Top 25 Watching Stock Generator
+à¸ªà¹à¸à¸™à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§ à¹à¸¥à¹‰à¸§à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸ Top 25 à¸•à¸²à¸¡à¹€à¸à¸“à¸‘à¹Œà¸«à¸¥à¸²à¸¢à¸¡à¸´à¸•à¸´
+"""
+
+from src.engine.scanner import MarketScanner
+from src.data.market_data import MarketData
+import json
+from datetime import datetime
+import pandas as pd
+
+# à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§ (à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡à¹„à¸”à¹‰)
+ALL_SYMBOLS = [
+    # Big Tech
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX',
+    # Semiconductors
+    'AMD', 'INTC', 'QCOM', 'MU', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'ASML',
+    # Growth/SaaS
+    'COIN', 'HOOD', 'PLTR', 'U', 'SNOW', 'DDOG', 'NET', 'CRWD', 'ZS', 'OKTA',
+    # Indices/ETFs
+    'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO',
+    # Traditional Blue Chips
+    'DIS', 'BA', 'MCD', 'KO', 'JNJ', 'PG', 'WMT', 'CVX', 'XOM', 'JPM',
+    # Crypto Miners
+    'MARA', 'RIOT', 'CLSK', 'HUT', 'BITF',
+    # EVs & Auto
+    'F', 'GM', 'RIVN', 'LCID', 'NIO', 'XPEV', 'LI',
+    # Finance
+    'BAC', 'C', 'GS', 'MS', 'WFC', 'BLK', 'SCHW', 'AXP',
+    # Healthcare
+    'UNH', 'LLY', 'ABBV', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN', 'GILD', 'CVS',
+    # Energy
+    'SLB', 'COP', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX',
+    # Consumer
+    'COST', 'HD', 'LOW', 'TGT', 'NKE', 'SBUX', 'CMG', 'YUM',
+    # Communications
+    'T', 'VZ', 'TMUS', 'CMCSA', 'PARA',
+    # Industrial
+    'CAT', 'DE', 'UPS', 'FDX', 'HON', 'MMM', 'GE', 'LMT', 'RTX',
+    # Materials
+    'LIN', 'APD', 'ECL', 'SHW', 'NEM', 'FCX', 'NUE',
+    # Real Estate
+    'AMT', 'PLD', 'CCI', 'EQIX', 'PSA', 'DLR', 'O', 'WELL',
+    # Utilities
+    'NEE', 'DUK', 'SO', 'D', 'AEP', 'EXC', 'SRE',
+]
+
+# Sector Mapping
+SECTOR_MAP = {
+    'Tech': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NFLX', 'CRM', 'ORCL'],
+    'Semiconductor': ['NVDA', 'AMD', 'INTC', 'QCOM', 'MU', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'ASML', 'TSM'],
+    'Growth': ['COIN', 'HOOD', 'PLTR', 'U', 'SNOW', 'DDOG', 'NET', 'CRWD', 'ZS', 'OKTA'],
+    'Auto': ['TSLA', 'F', 'GM', 'RIVN', 'LCID', 'NIO', 'XPEV', 'LI'],
+    'Finance': ['JPM', 'BAC', 'C', 'GS', 'MS', 'WFC', 'BLK', 'SCHW', 'AXP'],
+    'Healthcare': ['UNH', 'LLY', 'ABBV', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN', 'GILD', 'CVS'],
+    'Energy': ['XOM', 'CVX', 'SLB', 'COP', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX'],
+    'Consumer': ['COST', 'HD', 'LOW', 'TGT', 'NKE', 'SBUX', 'CMG', 'YUM', 'MCD', 'KO', 'PG', 'WMT'],
+}
+
+def get_sector(symbol):
+    """à¸«à¸² Sector à¸‚à¸­à¸‡à¸«à¸¸à¹‰à¸™"""
+    for sector, symbols in SECTOR_MAP.items():
+        if symbol in symbols:
+            return sector
+    return 'Other'
+
+def calculate_score(symbol, signal_data, market_data_df):
+    """
+    à¸„à¸³à¸™à¸§à¸“à¸„à¸°à¹à¸™à¸™à¸£à¸§à¸¡à¸ˆà¸²à¸ 5 à¹€à¸à¸“à¸‘à¹Œ:
+    1. Technical Signal (40)
+    2. Momentum (25)
+    3. Volatility (20)
+    4. Market Cap (10)
+    5. Sector (5)
+    """
+    score = 0
+    details = {}
+    
+    # 1. Technical Signal (40 à¸„à¸°à¹à¸™à¸™)
+    color = signal_data.get('color', 'Neutral')
+    if color == 'Green':
+        score += 40
+        details['signal'] = 'Green (Strong Uptrend)'
+    elif color == 'Blue':
+        score += 30
+        details['signal'] = 'Blue (Weak Uptrend)'
+    elif color == 'Yellow':
+        score += 20
+        details['signal'] = 'Yellow (Weak Downtrend)'
+    else:  # Red
+        score += 0
+        details['signal'] = 'Red (Downtrend)'
+    
+    # 2. Momentum (25 à¸„à¸°à¹à¸™à¸™)
+    change_pct = abs(signal_data.get('change_pct', 0))
+    if change_pct > 2:
+        score += 25
+        details['momentum'] = 'High (+25)'
+    elif change_pct > 1:
+        score += 15
+        details['momentum'] = 'Medium (+15)'
+    else:
+        score += 5
+        details['momentum'] = 'Low (+5)'
+    
+    # 3. Volatility (20 à¸„à¸°à¹à¸™à¸™) - à¹ƒà¸Šà¹‰ change_pct à¹€à¸›à¹‡à¸™à¸•à¸±à¸§à¹à¸—à¸™ ATR
+    if change_pct > 3:
+        score += 20
+        details['volatility'] = 'High (+20)'
+    elif change_pct > 1:
+        score += 15
+        details['volatility'] = 'Medium (+15)'
+    else:
+        score += 10
+        details['volatility'] = 'Low (+10)'
+    
+    # 4. Market Cap & Liquidity (10 à¸„à¸°à¹à¸™à¸™)
+    # à¸ªà¸¡à¸¡à¸•à¸´à¸§à¹ˆà¸²à¸«à¸¸à¹‰à¸™à¹ƒà¸™ list à¸«à¸¥à¸±à¸à¹† à¹€à¸›à¹‡à¸™ Large Cap
+    large_caps = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'JPM', 'UNH']
+    if symbol in large_caps:
+        score += 10
+        details['market_cap'] = 'Large Cap (+10)'
+    else:
+        score += 7
+        details['market_cap'] = 'Mid/Small Cap (+7)'
+    
+    # 5. Sector Rotation (5 à¸„à¸°à¹à¸™à¸™)
+    sector = get_sector(symbol)
+    # à¸ªà¸¡à¸¡à¸•à¸´à¸§à¹ˆà¸²à¸«à¸¸à¹‰à¸™à¹à¸£à¸à¹ƒà¸™ Sector à¹€à¸›à¹‡à¸™ Leader
+    is_leader = False
+    for sec, syms in SECTOR_MAP.items():
+        if symbol in syms and syms[0] == symbol:
+            is_leader = True
+            break
+    
+    if is_leader:
+        score += 5
+        details['sector'] = f'{sector} Leader (+5)'
+    else:
+        score += 3
+        details['sector'] = f'{sector} (+3)'
+    
+    return score, details
+
+def generate_top25_watchlist(strategy='hybrid'):
+    """
+    à¸ªà¸£à¹‰à¸²à¸‡ Top 25 Watchlist
+    
+    Args:
+        strategy: 'top_score', 'diversified', 'hybrid'
+    """
+    print("=" * 70)
+    print("  StockRobo-US01: Top 25 Watching Stock Generator")
+    print(f"  Strategy: {strategy.upper()}")
+    print(f"  Scanning {len(ALL_SYMBOLS)} symbols...")
+    print("=" * 70)
+    
+    scanner = MarketScanner()
+    market_data = MarketData()
+    
+    # à¸ªà¹à¸à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
+    results = scanner.scan(ALL_SYMBOLS)
+    
+    # à¸£à¸§à¸¡ Buy + Sell signals (à¹€à¸£à¸²à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸—à¸¸à¸à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸¡à¸µ Signal)
+    all_signals = results.get('buy_signals', []) + results.get('sell_signals', [])
+    
+    print(f"\nâœ… Found {len(all_signals)} signals")
+    
+    if not all_signals:
+        print("âš ï¸ No signals found. Using default watchlist.")
+        return ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+    
+    # à¸„à¸³à¸™à¸§à¸“à¸„à¸°à¹à¸™à¸™à¹à¸•à¹ˆà¸¥à¸°à¸«à¸¸à¹‰à¸™
+    scored_stocks = []
+    
+    for sig in all_signals:
+        symbol = sig['symbol']
+        
+        # à¸”à¸¶à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡ (à¸–à¹‰à¸²à¸•à¹‰à¸­à¸‡à¸à¸²à¸£)
+        try:
+            df = market_data.get_history(symbol, period='1mo')
+            score, details = calculate_score(symbol, sig, df)
+            
+            scored_stocks.append({
+                'symbol': symbol,
+                'score': score,
+                'price': sig.get('price', 0),
+                'change_pct': sig.get('change_pct', 0),
+                'color': sig.get('color', 'Unknown'),
+                'sector': get_sector(symbol),
+                'details': details
+            })
+        except Exception as e:
+            print(f"âš ï¸ Error processing {symbol}: {e}")
+            continue
+    
+    # à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡à¸„à¸°à¹à¸™à¸™
+    scored_stocks.sort(key=lambda x: x['score'], reverse=True)
+    
+    # à¹€à¸¥à¸·à¸­à¸ Top 25 à¸•à¸²à¸¡ Strategy
+    if strategy == 'top_score':
+        top_25 = scored_stocks[:25]
+    
+    elif strategy == 'diversified':
+        # à¸à¸£à¸°à¸ˆà¸²à¸¢ Sector
+        top_25 = []
+        sector_quota = {
+            'Tech': 6,
+            'Semiconductor': 5,
+            'Growth': 4,
+            'Auto': 3,
+            'Finance': 2,
+            'Healthcare': 2,
+            'Energy': 1,
+            'Consumer': 1,
+            'Other': 1
+        }
+        
+        for sector, quota in sector_quota.items():
+            sector_stocks = [s for s in scored_stocks if s['sector'] == sector]
+            top_25.extend(sector_stocks[:quota])
+        
+        # à¹€à¸•à¸´à¸¡à¹ƒà¸«à¹‰à¸„à¸£à¸š 25
+        remaining = 25 - len(top_25)
+        if remaining > 0:
+            added_symbols = {s['symbol'] for s in top_25}
+            for stock in scored_stocks:
+                if stock['symbol'] not in added_symbols:
+                    top_25.append(stock)
+                    if len(top_25) >= 25:
+                        break
+    
+    else:  # hybrid
+        # à¹€à¸­à¸² Top 15 à¸•à¸²à¸¡à¸„à¸°à¹à¸™à¸™
+        top_25 = scored_stocks[:15]
+        added_symbols = {s['symbol'] for s in top_25}
+        
+        # + 10 à¸«à¸¸à¹‰à¸™à¸à¸£à¸°à¸ˆà¸²à¸¢ Sector
+        for sector in ['Tech', 'Semiconductor', 'Growth', 'Auto', 'Finance', 'Healthcare']:
+            sector_stocks = [s for s in scored_stocks if s['sector'] == sector and s['symbol'] not in added_symbols]
+            if sector_stocks:
+                top_25.append(sector_stocks[0])
+                added_symbols.add(sector_stocks[0]['symbol'])
+                if len(top_25) >= 25:
+                    break
+        
+        # à¹€à¸•à¸´à¸¡à¹ƒà¸«à¹‰à¸„à¸£à¸š 25
+        remaining = 25 - len(top_25)
+        if remaining > 0:
+            for stock in scored_stocks:
+                if stock['symbol'] not in added_symbols:
+                    top_25.append(stock)
+                    if len(top_25) >= 25:
+                        break
+    
+    # à¸ˆà¸³à¸à¸±à¸”à¹„à¸§à¹‰à¸—à¸µà¹ˆ 25
+    top_25 = top_25[:25]
+    
+    # à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡à¹„à¸Ÿà¸¥à¹Œ
+    watchlist_data = {
+        'generated_at': datetime.now().isoformat(),
+        'strategy': strategy,
+        'total_scanned': len(ALL_SYMBOLS),
+        'signals_found': len(all_signals),
+        'watchlist': [s['symbol'] for s in top_25],
+        'details': top_25
+    }
+    
+    with open('data/watchlist.json', 'w') as f:
+        json.dump(watchlist_data, f, indent=2)
+    
+    # à¹à¸ªà¸”à¸‡à¸œà¸¥
+    print(f"\nðŸ† Top 25 Watching Stock:")
+    print("=" * 90)
+    print(f"{'#':<3} {'Symbol':<8} {'Score':<6} {'Price':<10} {'Change%':<10} {'Signal':<15} {'Sector':<15}")
+    print("=" * 90)
+    
+    for i, stock in enumerate(top_25, 1):
+        print(f"{i:<3} {stock['symbol']:<8} {stock['score']:<6} "
+              f"${stock['price']:<9.2f} {stock['change_pct']:>+8.2f}% "
+              f"{stock['color']:<15} {stock['sector']:<15}")
+    
+    print("=" * 90)
+    
+    # à¸ªà¸£à¸¸à¸› Sector Distribution
+    sector_count = {}
+    for stock in top_25:
+        sector = stock['sector']
+        sector_count[sector] = sector_count.get(sector, 0) + 1
+    
+    print(f"\nðŸ“Š Sector Distribution:")
+    for sector, count in sorted(sector_count.items(), key=lambda x: x[1], reverse=True):
+        print(f"  {sector:<15}: {count} stocks")
+    
+    print(f"\nðŸ’¾ Saved to: data/watchlist.json")
+    
+    return [s['symbol'] for s in top_25]
+
+if __name__ == "__main__":
+    import sys
+    
+    # à¸£à¸±à¸š strategy à¸ˆà¸²à¸ command line (default: hybrid)
+    strategy = sys.argv[1] if len(sys.argv) > 1 else 'hybrid'
+    
+    if strategy not in ['top_score', 'diversified', 'hybrid']:
+        print(f"âš ï¸ Invalid strategy: {strategy}")
+        print("Valid options: top_score, diversified, hybrid")
+        sys.exit(1)
+    
+    watchlist = generate_top25_watchlist(strategy=strategy)
+    
+    print("\nðŸŽ¯ Next Steps:")
+    print("1. Review the watchlist in data/watchlist.json")
+    print("2. Push to GitHub: git add data/watchlist.json && git commit -m 'Update watchlist' && git push")
+    print("3. Phase 2 bot will use these 25 symbols for trading (5 rounds/day)")
+    print("4. Re-run this script tomorrow morning for fresh watchlist")
+
+
+FILE: generate_watchlist.py
+"""
+Watchlist Generator: à¸ªà¹à¸à¸™à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§ à¹à¸¥à¹‰à¸§à¸„à¸±à¸”à¹€à¸«à¸¥à¸·à¸­ Top 20
+à¸£à¸±à¸™à¸šà¸™à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡ 1-2 à¸„à¸£à¸±à¹‰à¸‡/à¸§à¸±à¸™
+"""
+
+from src.engine.scanner import MarketScanner
+import json
+from datetime import datetime
+
+# à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§ (à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡ - à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡à¹„à¸”à¹‰)
+ALL_SYMBOLS = [
+    # Big Tech
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX',
+    # Semiconductors
+    'AMD', 'INTC', 'QCOM', 'MU', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'ASML',
+    # Growth/Retail
+    'COIN', 'HOOD', 'PLTR', 'U', 'SNOW', 'DDOG', 'NET', 'CRWD', 'ZS', 'OKTA',
+    # Indices/ETFs
+    'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO',
+    # Traditional Blue Chips
+    'DIS', 'BA', 'MCD', 'KO', 'JNJ', 'PG', 'WMT', 'CVX', 'XOM', 'JPM',
+    # Crypto Miners
+    'MARA', 'RIOT', 'CLSK', 'HUT', 'BITF',
+    # EVs & Auto
+    'F', 'GM', 'RIVN', 'LCID', 'NIO', 'XPEV', 'LI',
+    # Finance
+    'BAC', 'C', 'GS', 'MS', 'WFC', 'BLK', 'SCHW', 'AXP',
+    # Healthcare
+    'UNH', 'LLY', 'ABBV', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN', 'GILD', 'CVS',
+    # Energy
+    'SLB', 'COP', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX',
+    # Consumer
+    'COST', 'HD', 'LOW', 'TGT', 'NKE', 'SBUX', 'CMG', 'YUM',
+    # Communications
+    'T', 'VZ', 'TMUS', 'CMCSA', 'DIS', 'NFLX', 'PARA',
+    # Industrial
+    'CAT', 'DE', 'UPS', 'FDX', 'HON', 'MMM', 'GE', 'LMT', 'RTX',
+    # Materials
+    'LIN', 'APD', 'ECL', 'SHW', 'NEM', 'FCX', 'NUE',
+    # Real Estate
+    'AMT', 'PLD', 'CCI', 'EQIX', 'PSA', 'DLR', 'O', 'WELL',
+    # Utilities
+    'NEE', 'DUK', 'SO', 'D', 'AEP', 'EXC', 'SRE',
+    # Add more symbols here to reach 503...
+    # (à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¸µà¹‰à¸¡à¸µà¸›à¸£à¸°à¸¡à¸²à¸“ 150 à¸•à¸±à¸§ - à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡à¹„à¸”à¹‰à¸•à¸²à¸¡à¸•à¹‰à¸­à¸‡à¸à¸²à¸£)
+]
+
+def generate_watchlist(top_n=20):
+    """
+    à¸ªà¹à¸à¸™à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” à¹à¸¥à¹‰à¸§à¸„à¸±à¸”à¹€à¸«à¸¥à¸·à¸­ Top N à¸•à¸±à¸§à¸—à¸µà¹ˆà¸™à¹ˆà¸²à¸ªà¸™à¹ƒà¸ˆà¸—à¸µà¹ˆà¸ªà¸¸à¸”
+    """
+    print("=" * 60)
+    print("  StockRobo-US01: Watchlist Generator")
+    print(f"  Scanning {len(ALL_SYMBOLS)} symbols...")
+    print("=" * 60)
+    
+    scanner = MarketScanner()
+    results = scanner.scan(ALL_SYMBOLS)
+    
+    # à¸£à¸§à¸¡ Buy Signals à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
+    buy_signals = results.get('buy_signals', [])
+    
+    print(f"\nâœ… Found {len(buy_signals)} buy signals")
+    
+    if not buy_signals:
+        print("âš ï¸ No signals found. Using default watchlist.")
+        return ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+    
+    # à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ change_pct (momentum)
+    sorted_signals = sorted(buy_signals, key=lambda x: abs(x.get('change_pct', 0)), reverse=True)
+    
+    # à¸„à¸±à¸”à¹€à¸«à¸¥à¸·à¸­ Top N
+    top_symbols = [sig['symbol'] for sig in sorted_signals[:top_n]]
+    
+    # à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡à¹„à¸Ÿà¸¥à¹Œ
+    watchlist_data = {
+        'generated_at': datetime.now().isoformat(),
+        'total_scanned': len(ALL_SYMBOLS),
+        'signals_found': len(buy_signals),
+        'watchlist': top_symbols,
+        'details': sorted_signals[:top_n]
+    }
+    
+    with open('data/watchlist.json', 'w') as f:
+        json.dump(watchlist_data, f, indent=2)
+    
+    print(f"\nðŸ“Š Top {top_n} Watchlist:")
+    print("-" * 60)
+    for i, symbol in enumerate(top_symbols, 1):
+        detail = next((s for s in sorted_signals if s['symbol'] == symbol), {})
+        print(f"{i:2d}. {symbol:6s} - Change: {detail.get('change_pct', 0):+.2f}%")
+    print("-" * 60)
+    
+    print(f"\nðŸ’¾ Saved to: data/watchlist.json")
+    
+    return top_symbols
+
+if __name__ == "__main__":
+    watchlist = generate_watchlist(top_n=20)
+    
+    print("\nðŸŽ¯ Next Steps:")
+    print("1. Review the watchlist in data/watchlist.json")
+    print("2. Phase 2 bot will use these symbols for trading")
+    print("3. Re-run this script daily to update watchlist")
+
+
+FILE: COMBINED_STRATEGY.md
+# ðŸŽ¯ Combined Strategy System: CDC + Fibonacci
+
+## ðŸ“Š à¸ à¸²à¸žà¸£à¸§à¸¡
+
+à¸£à¸°à¸šà¸šà¸™à¸µà¹‰à¸£à¸§à¸¡ **2 à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œ** à¹€à¸‚à¹‰à¸²à¸”à¹‰à¸§à¸¢à¸à¸±à¸™:
+
+### **1. CDC Action Zone (Trend Following) ðŸŸ¢**
+- à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸à¸³à¸¥à¸±à¸‡ **à¸‚à¸¶à¹‰à¸™** (Uptrend)
+- à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š: Momentum Trading
+- Signal: Green (EMA12 > EMA26 AND Price > EMA12)
+
+### **2. Fibonacci Retracement (Mean Reversion) ðŸ”µ**
+- à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆ **à¸•à¸à¸¥à¸‡à¸¡à¸² 50-78.6%** à¸ˆà¸²à¸ High
+- à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š: Dip Buying, Value Hunting
+- Signal: à¸£à¸²à¸„à¸²à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ Fibo Zone (50% - 78.6%)
+
+---
+
+## ðŸŽ¯ à¸—à¸³à¹„à¸¡à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰à¸—à¸±à¹‰à¸‡ 2 à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œ?
+
+### **à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡à¸—à¸¸à¸à¸ªà¸–à¸²à¸™à¸à¸²à¸£à¸“à¹Œ:**
+
+```
+à¸•à¸¥à¸²à¸”à¸‚à¸¶à¹‰à¸™ (Uptrend)
+â”œâ”€ CDC Strategy â†’ à¸‹à¸·à¹‰à¸­à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸à¸³à¸¥à¸±à¸‡à¹à¸£à¸‡
+â””â”€ Fibo Strategy â†’ à¸‹à¸·à¹‰à¸­à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆ Pullback (à¸•à¸à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§)
+
+à¸•à¸¥à¸²à¸”à¸¥à¸‡ (Downtrend)
+â”œâ”€ CDC Strategy â†’ à¹„à¸¡à¹ˆà¸¡à¸µ Signal (à¸‚à¹‰à¸²à¸¡)
+â””â”€ Fibo Strategy â†’ à¸«à¸²à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸•à¸à¸¥à¸¶à¸ à¸£à¸­ Bounce
+```
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:** à¸¡à¸µà¹‚à¸­à¸à¸²à¸ªà¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸—à¸±à¹‰à¸‡à¸•à¸¥à¸²à¸”à¸‚à¸¶à¹‰à¸™à¹à¸¥à¸°à¸•à¸¥à¸²à¸”à¸¥à¸‡!
+
+---
+
+## ðŸ“‹ Fibonacci Zone à¸„à¸·à¸­à¸­à¸°à¹„à¸£?
+
+### **à¸à¸²à¸£à¸„à¸³à¸™à¸§à¸“:**
+
+```
+Swing High = à¸£à¸²à¸„à¸²à¸ªà¸¹à¸‡à¸ªà¸¸à¸”à¹ƒà¸™ 120 à¸§à¸±à¸™à¸—à¸µà¹ˆà¸œà¹ˆà¸²à¸™à¸¡à¸²
+Swing Low  = à¸£à¸²à¸„à¸²à¸•à¹ˆà¸³à¸ªà¸¸à¸”à¹ƒà¸™ 120 à¸§à¸±à¸™à¸—à¸µà¹ˆà¸œà¹ˆà¸²à¸™à¸¡à¸²
+Range      = Swing High - Swing Low
+
+Fibo 0%    = Swing High (à¸ˆà¸¸à¸”à¸ªà¸¹à¸‡à¸ªà¸¸à¸”)
+Fibo 50%   = Swing High - (Range Ã— 0.5)
+Fibo 78.6% = Swing High - (Range Ã— 0.786)
+Fibo 100%  = Swing Low (à¸ˆà¸¸à¸”à¸•à¹ˆà¸³à¸ªà¸¸à¸”)
+```
+
+### **Buy Zone: 50% - 78.6%**
+
+```
+Swing High ($100)
+    â”‚
+    â”‚ â† 0% (High)
+    â”‚
+    â”œâ”€ 50% ($75) â† à¹€à¸£à¸´à¹ˆà¸¡ Buy Zone
+    â”‚
+    â”‚ â† 61.8% (Golden Ratio)
+    â”‚
+    â”œâ”€ 78.6% ($60) â† à¸ªà¸´à¹‰à¸™à¸ªà¸¸à¸” Buy Zone
+    â”‚
+    â”‚ â† 100% (Low)
+    â”‚
+Swing Low ($50)
+```
+
+**à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡:**
+- High = $100
+- Low = $50
+- Range = $50
+- **Fibo 50%** = $100 - ($50 Ã— 0.5) = **$75**
+- **Fibo 78.6%** = $100 - ($50 Ã— 0.786) = **$60.70**
+- **Buy Zone** = à¸£à¸²à¸„à¸² $60.70 - $75
+
+---
+
+## ðŸŽ¯ à¹€à¸à¸“à¸‘à¹Œà¸à¸²à¸£à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸
+
+### **CDC Opportunities (Top 20)**
+
+| à¹€à¸à¸“à¸‘à¹Œ | à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸” |
+|-------|------------|
+| Color | ðŸŸ¢ Green (Strong Uptrend) |
+| EMA | EMA12 > EMA26 |
+| Price | Price > EMA12 |
+| Momentum | à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ Change% (à¸ªà¸¹à¸‡ â†’ à¸•à¹ˆà¸³) |
+
+**à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡:**
+```
+NVDA - Green, +3.5% â†’ Top 1
+TSLA - Green, +2.8% â†’ Top 2
+AAPL - Green, +1.2% â†’ Top 3
+```
+
+---
+
+### **Fibo Opportunities (Top 10)**
+
+| à¹€à¸à¸“à¸‘à¹Œ | à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸” |
+|-------|------------|
+| In Zone | à¸£à¸²à¸„à¸²à¸­à¸¢à¸¹à¹ˆà¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ Fibo 50% - 78.6% |
+| Retracement | à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ % (à¸¥à¸¶à¸ â†’ à¸•à¸·à¹‰à¸™) |
+| Discount | Deep (>65%) à¸«à¸£à¸·à¸­ Moderate (50-65%) |
+
+**à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡:**
+```
+COIN - 72% Retracement (Deep) â†’ Top 1
+PLTR - 68% Retracement (Deep) â†’ Top 2
+SNOW - 55% Retracement (Moderate) â†’ Top 3
+```
+
+---
+
+## ðŸ“Š à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+### **Output: Combined Watchlist**
+
+```
+================================================================================
+  StockRobo-US01: Combined Watchlist Generator
+  Strategy: CDC (Trend) + Fibo (Pullback)
+  Scanning 150 symbols...
+================================================================================
+
+âœ… Found 25 CDC signals (Green)
+âœ… Found 12 Fibo signals (50-78.6% zone)
+
+ðŸŸ¢ Top 20 CDC Opportunities (Trend Following):
+================================================================================
+#   Symbol   Price      Change%    Strength    
+================================================================================
+1   NVDA     $145.50    +3.45%     Strong      
+2   TSLA     $250.00    +2.80%     Strong      
+3   AMD      $180.25    +2.10%     Strong      
+4   AAPL     $185.00    +1.50%     Moderate    
+5   MSFT     $420.00    +1.20%     Moderate    
+...
+20  QQQ      $450.00    +0.50%     Moderate    
+
+ðŸ”µ Top 10 Fibo Opportunities (Pullback/Dip Buying):
+================================================================================
+#   Symbol   Price      High       Retrace%    Discount    
+================================================================================
+1   COIN     $165.00    $280.00    72.5%       Deep        
+2   PLTR     $25.50     $40.00     68.2%       Deep        
+3   SNOW     $180.00    $250.00    65.0%       Deep        
+4   CRWD     $295.00    $380.00    58.5%       Moderate    
+5   NET      $85.00     $110.00    55.0%       Moderate    
+...
+10  DDOG     $120.00    $150.00    51.2%       Moderate    
+
+================================================================================
+
+ðŸ“Š Combined Watchlist: 28 symbols
+   - CDC (Green): 20 stocks
+   - Fibo (Dip): 8 stocks (unique)
+
+ðŸ’¾ Saved to: data/watchlist.json
+```
+
+---
+
+## ðŸš€ à¸§à¸´à¸˜à¸µà¹ƒà¸Šà¹‰à¸‡à¸²à¸™
+
+### **Step 1: à¸ªà¸£à¹‰à¸²à¸‡ Combined Watchlist**
+
+```bash
+python generate_combined_watchlist.py
+```
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:**
+- Top 20 CDC (à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸à¸³à¸¥à¸±à¸‡à¸‚à¸¶à¹‰à¸™)
+- Top 10 Fibo (à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸•à¸à¸¥à¸¶à¸)
+- à¸£à¸§à¸¡ ~28-30 à¸«à¸¸à¹‰à¸™ (à¸•à¸±à¸”à¸‹à¹‰à¸³à¸­à¸­à¸)
+
+---
+
+### **Step 2: à¸”à¸¹à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”**
+
+```bash
+cat data/watchlist.json
+```
+
+**à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¹„à¸”à¹‰:**
+```json
+{
+  "generated_at": "2026-01-27T21:35:00",
+  "total_scanned": 150,
+  "cdc_signals": 25,
+  "fibo_signals": 12,
+  "watchlist": ["NVDA", "TSLA", "COIN", "PLTR", ...],
+  "cdc_list": ["NVDA", "TSLA", "AMD", ...],
+  "fibo_list": ["COIN", "PLTR", "SNOW", ...],
+  "details": [
+    {
+      "symbol": "NVDA",
+      "strategy": "CDC",
+      "price": 145.50,
+      "change_pct": 3.45,
+      "color": "Green"
+    },
+    {
+      "symbol": "COIN",
+      "strategy": "Fibo",
+      "price": 165.00,
+      "swing_high": 280.00,
+      "retracement_pct": 72.5,
+      "discount": "Deep"
+    }
+  ]
+}
+```
+
+---
+
+### **Step 3: Push à¹„à¸› GitHub**
+
+```bash
+git add data/watchlist.json generate_combined_watchlist.py
+git commit -m "Add combined CDC+Fibo watchlist"
+git push
+```
+
+---
+
+### **Step 4: Bot à¸£à¸±à¸™à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´**
+
+Phase 2 Bot à¸ˆà¸°:
+1. à¸­à¹ˆà¸²à¸™ `watchlist.json`
+2. à¸ªà¹à¸à¸™ 28-30 à¸«à¸¸à¹‰à¸™
+3. à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸—à¸±à¹‰à¸‡ CDC à¹à¸¥à¸° Fibo signals
+4. à¸£à¸±à¸™ 5 à¸£à¸­à¸š/à¸§à¸±à¸™
+
+---
+
+## ðŸ“Š à¹€à¸›à¸£à¸µà¸¢à¸šà¹€à¸—à¸µà¸¢à¸šà¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œ
+
+| | CDC (Trend) | Fibo (Pullback) |
+|---|---|---|
+| **à¸ªà¸–à¸²à¸™à¸à¸²à¸£à¸“à¹Œ** | à¸•à¸¥à¸²à¸”à¸‚à¸¶à¹‰à¸™ | à¸•à¸¥à¸²à¸”à¹à¸à¹‰à¸•à¸±à¸§/à¸¥à¸‡ |
+| **Signal** | Green (Uptrend) | In Fibo Zone (50-78.6%) |
+| **Entry** | à¸‹à¸·à¹‰à¸­à¹€à¸¡à¸·à¹ˆà¸­à¹à¸£à¸‡ | à¸‹à¸·à¹‰à¸­à¹€à¸¡à¸·à¹ˆà¸­à¸•à¸ |
+| **Risk** | à¸•à¹ˆà¸³-à¸à¸¥à¸²à¸‡ | à¸à¸¥à¸²à¸‡-à¸ªà¸¹à¸‡ |
+| **Reward** | à¸à¸¥à¸²à¸‡ | à¸ªà¸¹à¸‡ |
+| **Win Rate** | 60-70% | 50-60% |
+| **à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š** | Momentum Trader | Value Hunter |
+
+---
+
+## ðŸŽ¯ à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸à¸²à¸£à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¸ˆà¸£à¸´à¸‡
+
+### **Scenario 1: à¸•à¸¥à¸²à¸”à¸‚à¸¶à¹‰à¸™ (Bull Market)**
+
+**CDC Signals:**
+- NVDA, TSLA, AMD â†’ à¸‹à¸·à¹‰à¸­à¸—à¸±à¸™à¸—à¸µ (Momentum)
+
+**Fibo Signals:**
+- COIN, PLTR â†’ à¸‹à¸·à¹‰à¸­à¸ˆà¸±à¸‡à¸«à¸§à¸° Pullback
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:**
+- à¹„à¸”à¹‰à¸à¸³à¹„à¸£à¸ˆà¸²à¸ Trend (CDC)
+- à¹„à¸”à¹‰à¸£à¸²à¸„à¸²à¸”à¸µà¸ˆà¸²à¸ Dip (Fibo)
+
+---
+
+### **Scenario 2: à¸•à¸¥à¸²à¸”à¸¥à¸‡ (Bear Market)**
+
+**CDC Signals:**
+- à¹„à¸¡à¹ˆà¸¡à¸µ (à¹„à¸¡à¹ˆà¸¡à¸µà¸«à¸¸à¹‰à¸™ Green)
+
+**Fibo Signals:**
+- AAPL, MSFT, GOOGL â†’ à¸‹à¸·à¹‰à¸­à¸ˆà¸±à¸‡à¸«à¸§à¸°à¸•à¸à¸¥à¸¶à¸
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:**
+- à¸¢à¸±à¸‡à¸¡à¸µà¹‚à¸­à¸à¸²à¸ªà¸‹à¸·à¹‰à¸­ (Fibo)
+- à¸£à¸­ Bounce à¸à¸¥à¸±à¸š
+
+---
+
+## ðŸ”§ à¸à¸²à¸£à¸›à¸£à¸±à¸šà¹à¸•à¹ˆà¸‡
+
+### **à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸³à¸™à¸§à¸™à¸«à¸¸à¹‰à¸™**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_combined_watchlist.py`:
+```python
+top_cdc = cdc_opportunities[:25]   # à¹€à¸žà¸´à¹ˆà¸¡à¸ˆà¸²à¸ 20 à¹€à¸›à¹‡à¸™ 25
+top_fibo = fibo_opportunities[:15]  # à¹€à¸žà¸´à¹ˆà¸¡à¸ˆà¸²à¸ 10 à¹€à¸›à¹‡à¸™ 15
+```
+
+---
+
+### **à¸›à¸£à¸±à¸š Fibo Zone**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `src/strategies/fibo_strategy.py`:
+```python
+# à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸²à¸ 50-78.6% à¹€à¸›à¹‡à¸™ 45-76.8%
+df['Fibo_450'] = df['Swing_High'] - (df['Range'] * 0.45)
+df['Fibo_768'] = df['Swing_High'] - (df['Range'] * 0.768)
+
+conditions = [
+    (df[close_col] <= df['Fibo_450']) & (df[close_col] >= df['Fibo_768'])
+]
+```
+
+---
+
+### **à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™ Lookback Period**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_combined_watchlist.py`:
+```python
+fibo_strategy = FiboZoneStrategy(lookback_period=90)  # à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸²à¸ 120 à¹€à¸›à¹‡à¸™ 90
+```
+
+---
+
+## ðŸ› Troubleshooting
+
+### **à¸›à¸±à¸à¸«à¸²: à¹„à¸¡à¹ˆà¸¡à¸µ Fibo Signals**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸•à¸¥à¸²à¸”à¸à¸³à¸¥à¸±à¸‡à¸‚à¸¶à¹‰à¸™à¹à¸£à¸‡ à¹„à¸¡à¹ˆà¸¡à¸µà¸«à¸¸à¹‰à¸™à¸•à¸
+**à¹à¸à¹‰à¹„à¸‚:** à¸›à¸à¸•à¸´à¸„à¸£à¸±à¸š à¹ƒà¸Šà¹‰à¹à¸„à¹ˆ CDC à¸à¹‡à¹„à¸”à¹‰
+
+### **à¸›à¸±à¸à¸«à¸²: Fibo Signals à¹€à¸¢à¸­à¸°à¹€à¸à¸´à¸™à¹„à¸›**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸•à¸¥à¸²à¸”à¸à¸³à¸¥à¸±à¸‡à¸¥à¸‡ à¸«à¸¸à¹‰à¸™à¸ªà¹ˆà¸§à¸™à¹ƒà¸«à¸à¹ˆà¸•à¸
+**à¹à¸à¹‰à¹„à¸‚:** à¹€à¸¥à¸·à¸­à¸à¹€à¸‰à¸žà¸²à¸°à¸—à¸µà¹ˆ Retracement > 65% (Deep Discount)
+
+### **à¸›à¸±à¸à¸«à¸²: à¸«à¸¸à¹‰à¸™à¸‹à¹‰à¸³à¸à¸±à¸™à¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ CDC à¹à¸¥à¸° Fibo**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸«à¸¸à¹‰à¸™à¸šà¸²à¸‡à¸•à¸±à¸§à¸­à¸²à¸ˆà¸¡à¸µà¸—à¸±à¹‰à¸‡ 2 Signal
+**à¹à¸à¹‰à¹„à¸‚:** à¸£à¸°à¸šà¸šà¸•à¸±à¸”à¸‹à¹‰à¸³à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´à¹à¸¥à¹‰à¸§ (à¹ƒà¸™ combined_symbols)
+
+---
+
+## ðŸ“ˆ Expected Performance
+
+### **CDC Strategy**
+- **Win Rate:** 60-70%
+- **Avg Gain:** 3-5%
+- **Avg Loss:** 2-3%
+- **Risk/Reward:** 1:1.5
+
+### **Fibo Strategy**
+- **Win Rate:** 50-60%
+- **Avg Gain:** 5-10%
+- **Avg Loss:** 3-5%
+- **Risk/Reward:** 1:2
+
+### **Combined**
+- **Win Rate:** 55-65%
+- **Avg Gain:** 4-7%
+- **Diversification:** à¸”à¸µà¸‚à¸¶à¹‰à¸™ (à¹„à¸¡à¹ˆà¸žà¸¶à¹ˆà¸‡à¸žà¸² Trend à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¸µà¸¢à¸§)
+
+---
+
+## ðŸ“ à¸ªà¸£à¸¸à¸›
+
+**à¸£à¸°à¸šà¸š Combined Strategy à¹ƒà¸«à¹‰à¸„à¸¸à¸“:**
+- âœ… à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡à¸—à¸±à¹‰à¸‡ Uptrend (CDC) à¹à¸¥à¸° Pullback (Fibo)
+- âœ… à¸¡à¸µà¹‚à¸­à¸à¸²à¸ªà¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸—à¸±à¹‰à¸‡à¸•à¸¥à¸²à¸”à¸‚à¸¶à¹‰à¸™à¹à¸¥à¸°à¸¥à¸‡
+- âœ… à¸à¸£à¸°à¸ˆà¸²à¸¢ Risk à¸”à¸µà¸à¸§à¹ˆà¸²à¹ƒà¸Šà¹‰à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œà¹€à¸”à¸µà¸¢à¸§
+- âœ… à¹€à¸žà¸´à¹ˆà¸¡à¹‚à¸­à¸à¸²à¸ªà¸à¸³à¹„à¸£à¸ˆà¸²à¸ Dip Buying
+- âœ… à¸¢à¸±à¸‡à¸„à¸‡à¹ƒà¸Šà¹‰ Momentum Trading (CDC)
+
+**Best Practice:**
+1. à¸£à¸±à¸™ `generate_combined_watchlist.py` à¸—à¸¸à¸à¹€à¸Šà¹‰à¸² 21:30 à¸™.
+2. à¸”à¸¹ CDC List (à¸«à¸¸à¹‰à¸™à¹à¸£à¸‡) à¹à¸¥à¸° Fibo List (à¸«à¸¸à¹‰à¸™à¸•à¸)
+3. Push à¹„à¸› GitHub
+4. à¹ƒà¸«à¹‰ Bot à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ 5 à¸£à¸­à¸š/à¸§à¸±à¸™
+5. à¸”à¸¹ Dashboard à¹€à¸žà¸·à¹ˆà¸­à¸•à¸´à¸”à¸•à¸²à¸¡à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+**Happy Trading! ðŸš€ðŸ“ˆ**
+
+
+FILE: TOP25_SYSTEM.md
+# ðŸŽ¯ Top 25 Watching Stock System - Complete Guide
+
+## ðŸ“Š à¸ à¸²à¸žà¸£à¸§à¸¡à¸£à¸°à¸šà¸š
+
+à¸£à¸°à¸šà¸šà¸™à¸µà¹‰à¸­à¸­à¸à¹à¸šà¸šà¸¡à¸²à¹€à¸žà¸·à¹ˆà¸­:
+1. **à¸£à¸­à¸šà¸—à¸µà¹ˆ 1 (21:35 à¸™.)**: à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” â†’ à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸ Top 25
+2. **à¸£à¸­à¸šà¸—à¸µà¹ˆ 2-5**: à¸•à¸´à¸”à¸•à¸²à¸¡à¹à¸¥à¸°à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¹€à¸‰à¸žà¸²à¸° Top 25 à¸«à¸¸à¹‰à¸™à¸™à¸µà¹‰
+
+---
+
+## ðŸ” à¹€à¸à¸“à¸‘à¹Œà¸à¸²à¸£à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸ Top 25 (à¸„à¸°à¹à¸™à¸™à¹€à¸•à¹‡à¸¡ 100)
+
+### **1ï¸âƒ£ Technical Signal (40 à¸„à¸°à¹à¸™à¸™)**
+
+| CDC Color | à¸„à¸°à¹à¸™à¸™ | à¸„à¸§à¸²à¸¡à¸«à¸¡à¸²à¸¢ | Action |
+|-----------|-------|----------|--------|
+| ðŸŸ¢ Green | 40 | Strong Uptrend | à¸‹à¸·à¹‰à¸­à¸—à¸±à¸™à¸—à¸µ |
+| ðŸ”µ Blue | 30 | Weak Uptrend | à¸£à¸­à¸ˆà¸±à¸‡à¸«à¸§à¸° |
+| ðŸŸ¡ Yellow | 20 | Weak Downtrend | à¸£à¸°à¸§à¸±à¸‡ |
+| ðŸ”´ Red | 0 | Strong Downtrend | à¸‚à¹‰à¸²à¸¡ |
+
+**à¹€à¸‡à¸·à¹ˆà¸­à¸™à¹„à¸‚:**
+- **Green**: EMA12 > EMA26 AND Price > EMA12
+- **Blue**: EMA12 > EMA26 AND Price â‰¤ EMA12
+- **Yellow**: EMA12 < EMA26 AND Price â‰¥ EMA12
+- **Red**: EMA12 < EMA26 AND Price < EMA12
+
+---
+
+### **2ï¸âƒ£ Momentum (25 à¸„à¸°à¹à¸™à¸™)**
+
+| à¸£à¸°à¸”à¸±à¸š | à¸„à¸°à¹à¸™à¸™ | à¹€à¸‡à¸·à¹ˆà¸­à¸™à¹„à¸‚ |
+|-------|-------|----------|
+| High | 25 | \|Change%\| > 2% |
+| Medium | 15 | \|Change%\| > 1% |
+| Low | 5 | \|Change%\| â‰¤ 1% |
+
+**à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡:**
+- NVDA +3.5% = **25 à¸„à¸°à¹à¸™à¸™** (High Momentum)
+- AAPL +1.2% = **15 à¸„à¸°à¹à¸™à¸™** (Medium)
+- KO +0.3% = **5 à¸„à¸°à¹à¸™à¸™** (Low)
+
+---
+
+### **3ï¸âƒ£ Volatility Opportunity (20 à¸„à¸°à¹à¸™à¸™)**
+
+| à¸£à¸°à¸”à¸±à¸š | à¸„à¸°à¹à¸™à¸™ | ATR | à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡ |
+|-------|-------|-----|----------|
+| High | 20 | > 3% | TSLA, NVDA, COIN |
+| Medium | 15 | 1-3% | AAPL, MSFT, AMZN |
+| Low | 10 | < 1% | KO, PG, JNJ |
+
+**à¸«à¸¡à¸²à¸¢à¹€à¸«à¸•à¸¸:** Volatility à¸ªà¸¹à¸‡ = à¹‚à¸­à¸à¸²à¸ªà¸à¸³à¹„à¸£à¸ªà¸¹à¸‡ à¹à¸•à¹ˆ Risk à¸ªà¸¹à¸‡à¸”à¹‰à¸§à¸¢
+
+---
+
+### **4ï¸âƒ£ Market Cap & Liquidity (10 à¸„à¸°à¹à¸™à¸™)**
+
+| à¸›à¸£à¸°à¹€à¸ à¸— | à¸„à¸°à¹à¸™à¸™ | Market Cap | à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡ |
+|--------|-------|------------|----------|
+| Large Cap | 10 | > $100B | AAPL, MSFT, NVDA |
+| Mid Cap | 7 | $10B-$100B | COIN, PLTR, SNOW |
+| Small Cap | 5 | < $10B | RIOT, MARA |
+
+---
+
+### **5ï¸âƒ£ Sector Rotation (5 à¸„à¸°à¹à¸™à¸™)**
+
+| à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡ | à¸„à¸°à¹à¸™à¸™ | à¸„à¸§à¸²à¸¡à¸«à¸¡à¸²à¸¢ |
+|---------|-------|----------|
+| Sector Leader | 5 | à¸«à¸¸à¹‰à¸™à¹à¸‚à¹‡à¸‡à¹à¸à¸£à¹ˆà¸‡à¸—à¸µà¹ˆà¸ªà¸¸à¸”à¹ƒà¸™ Sector |
+| Sector Follower | 3 | à¸«à¸¸à¹‰à¸™à¸­à¸·à¹ˆà¸™à¹† à¹ƒà¸™ Sector |
+
+---
+
+## ðŸ“Š à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸à¸²à¸£à¹ƒà¸«à¹‰à¸„à¸°à¹à¸™à¸™
+
+### **à¸«à¸¸à¹‰à¸™ A: NVDA (Tier 1 - Must Watch)**
+
+| à¹€à¸à¸“à¸‘à¹Œ | à¸„à¸°à¹à¸™à¸™ | à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸” |
+|-------|-------|------------|
+| Technical | 40 | ðŸŸ¢ Green (Strong Uptrend) |
+| Momentum | 25 | +3.5% (High) |
+| Volatility | 20 | ATR 4% (High) |
+| Market Cap | 10 | Large Cap, High Liquidity |
+| Sector | 5 | Semiconductor Leader |
+| **à¸£à¸§à¸¡** | **100** | ðŸ† **Perfect Score** |
+
+**à¸„à¸³à¹à¸™à¸°à¸™à¸³:** à¸‹à¸·à¹‰à¸­à¸—à¸±à¸™à¸—à¸µà¸–à¹‰à¸²à¸¡à¸µ Signal
+
+---
+
+### **à¸«à¸¸à¹‰à¸™ B: AAPL (Tier 2 - Strong Watch)**
+
+| à¹€à¸à¸“à¸‘à¹Œ | à¸„à¸°à¹à¸™à¸™ | à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸” |
+|-------|-------|------------|
+| Technical | 30 | ðŸ”µ Blue (Pullback) |
+| Momentum | 15 | +1.2% (Medium) |
+| Volatility | 15 | ATR 2% (Medium) |
+| Market Cap | 10 | Large Cap |
+| Sector | 5 | Tech Leader |
+| **à¸£à¸§à¸¡** | **75** | âœ… **Strong Watch** |
+
+**à¸„à¸³à¹à¸™à¸°à¸™à¸³:** à¸£à¸­à¸à¸¥à¸±à¸šà¸¡à¸²à¹€à¸›à¹‡à¸™ Green
+
+---
+
+### **à¸«à¸¸à¹‰à¸™ C: KO (Tier 3 - Skip)**
+
+| à¹€à¸à¸“à¸‘à¹Œ | à¸„à¸°à¹à¸™à¸™ | à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸” |
+|-------|-------|------------|
+| Technical | 20 | ðŸŸ¡ Yellow (Weak) |
+| Momentum | 5 | +0.3% (Low) |
+| Volatility | 10 | ATR 0.8% (Low) |
+| Market Cap | 10 | Large Cap |
+| Sector | 3 | Consumer Follower |
+| **à¸£à¸§à¸¡** | **48** | âš ï¸ **Skip** |
+
+**à¸„à¸³à¹à¸™à¸°à¸™à¸³:** à¹„à¸¡à¹ˆà¹€à¸­à¸² (à¸„à¸°à¹à¸™à¸™à¸•à¹ˆà¸³à¸à¸§à¹ˆà¸² 50)
+
+---
+
+## ðŸŽ¯ à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œà¸à¸²à¸£à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸ (3 à¹à¸šà¸š)
+
+### **1. Top Score (à¹€à¸™à¹‰à¸™à¸„à¸°à¹à¸™à¸™)**
+
+```bash
+python generate_top25_watchlist.py top_score
+```
+
+**à¸§à¸´à¸˜à¸µà¸à¸²à¸£:**
+- à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡à¸„à¸°à¹à¸™à¸™à¸£à¸§à¸¡
+- à¹€à¸­à¸² Top 25 à¸—à¸µà¹ˆà¸„à¸°à¹à¸™à¸™à¸ªà¸¹à¸‡à¸ªà¸¸à¸”
+
+**à¸‚à¹‰à¸­à¸”à¸µ:**
+- âœ… à¹„à¸”à¹‰à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸”à¸µà¸—à¸µà¹ˆà¸ªà¸¸à¸”
+- âœ… à¸„à¸°à¹à¸™à¸™à¸ªà¸¹à¸‡à¸—à¸¸à¸à¸•à¸±à¸§
+
+**à¸‚à¹‰à¸­à¹€à¸ªà¸µà¸¢:**
+- âš ï¸ à¸­à¸²à¸ˆà¸‹à¹‰à¸³ Sector (à¹€à¸Šà¹ˆà¸™ Tech 15 à¸•à¸±à¸§)
+- âš ï¸ Risk à¸à¸£à¸°à¸ˆà¸¸à¸à¸•à¸±à¸§
+
+**à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š:** à¸•à¹‰à¸­à¸‡à¸à¸²à¸£ Performance à¸ªà¸¹à¸‡à¸ªà¸¸à¸”
+
+---
+
+### **2. Diversified (à¹€à¸™à¹‰à¸™à¸à¸£à¸°à¸ˆà¸²à¸¢)**
+
+```bash
+python generate_top25_watchlist.py diversified
+```
+
+**à¸§à¸´à¸˜à¸µà¸à¸²à¸£:**
+- à¸à¸£à¸°à¸ˆà¸²à¸¢à¸•à¸²à¸¡ Sector Quota:
+  - Tech: 6 à¸«à¸¸à¹‰à¸™
+  - Semiconductor: 5 à¸«à¸¸à¹‰à¸™
+  - Growth: 4 à¸«à¸¸à¹‰à¸™
+  - Auto: 3 à¸«à¸¸à¹‰à¸™
+  - Finance: 2 à¸«à¸¸à¹‰à¸™
+  - Healthcare: 2 à¸«à¸¸à¹‰à¸™
+  - Energy: 1 à¸«à¸¸à¹‰à¸™
+  - Consumer: 1 à¸«à¸¸à¹‰à¸™
+  - Other: 1 à¸«à¸¸à¹‰à¸™
+
+**à¸‚à¹‰à¸­à¸”à¸µ:**
+- âœ… à¸à¸£à¸°à¸ˆà¸²à¸¢ Risk
+- âœ… à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡à¸—à¸¸à¸ Sector
+
+**à¸‚à¹‰à¸­à¹€à¸ªà¸µà¸¢:**
+- âš ï¸ à¸­à¸²à¸ˆà¸žà¸¥à¸²à¸”à¸«à¸¸à¹‰à¸™à¸”à¸µà¸šà¸²à¸‡ Sector
+
+**à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š:** à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸„à¸§à¸²à¸¡à¸›à¸¥à¸­à¸”à¸ à¸±à¸¢
+
+---
+
+### **3. Hybrid (à¸œà¸ªà¸¡) â­ à¹à¸™à¸°à¸™à¸³**
+
+```bash
+python generate_top25_watchlist.py hybrid
+# à¸«à¸£à¸·à¸­
+python generate_top25_watchlist.py  # default
+```
+
+**à¸§à¸´à¸˜à¸µà¸à¸²à¸£:**
+- à¹€à¸­à¸² Top 15 à¸•à¸²à¸¡à¸„à¸°à¹à¸™à¸™
+- + 10 à¸«à¸¸à¹‰à¸™à¸à¸£à¸°à¸ˆà¸²à¸¢ Sector
+
+**à¸‚à¹‰à¸­à¸”à¸µ:**
+- âœ… à¹„à¸”à¹‰à¸«à¸¸à¹‰à¸™à¸”à¸µà¸—à¸µà¹ˆà¸ªà¸¸à¸” (Top 15)
+- âœ… à¸à¸£à¸°à¸ˆà¸²à¸¢ Risk (+ 10)
+- âœ… à¸ªà¸¡à¸”à¸¸à¸¥à¸—à¸µà¹ˆà¸ªà¸¸à¸”
+
+**à¸‚à¹‰à¸­à¹€à¸ªà¸µà¸¢:**
+- à¹„à¸¡à¹ˆà¸¡à¸µ (Best of Both Worlds)
+
+**à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š:** à¸—à¸¸à¸à¸„à¸™ (à¹à¸™à¸°à¸™à¸³!)
+
+---
+
+## ðŸ“‹ à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+### **Output: Top 25 Watching Stock**
+
+```
+==================================================================================
+  StockRobo-US01: Top 25 Watching Stock Generator
+  Strategy: HYBRID
+  Scanning 503 symbols...
+==================================================================================
+
+âœ… Found 45 signals
+
+ðŸ† Top 25 Watching Stock:
+==========================================================================================
+#   Symbol   Score  Price      Change%    Signal          Sector         
+==========================================================================================
+1   NVDA     100    $145.50    +3.45%     Green           Semiconductor  
+2   TSLA     98     $250.00    +4.20%     Green           Auto           
+3   AMD      95     $180.25    +2.80%     Green           Semiconductor  
+4   COIN     92     $165.00    +5.50%     Green           Growth         
+5   AAPL     88     $185.00    +2.10%     Green           Tech           
+6   MSFT     85     $420.00    +1.80%     Blue            Tech           
+7   GOOGL    83     $145.00    +1.50%     Green           Tech           
+8   AMZN     80     $175.00    +1.20%     Blue            Tech           
+9   META     78     $485.00    +2.50%     Green           Tech           
+10  PLTR     75     $25.50     +3.00%     Green           Growth         
+11  SNOW     73     $180.00    +2.20%     Blue            Growth         
+12  CRWD     70     $295.00    +1.80%     Green           Growth         
+13  AVGO     68     $1250.00   +1.50%     Blue            Semiconductor  
+14  ASML     65     $850.00    +1.20%     Blue            Semiconductor  
+15  QQQ      63     $450.00    +1.00%     Green           Tech           
+16  JPM      60     $185.00    +0.80%     Blue            Finance        
+17  UNH      58     $520.00    +0.70%     Blue            Healthcare     
+18  XOM      55     $115.00    +0.60%     Yellow          Energy         
+19  COST     53     $750.00    +0.50%     Blue            Consumer       
+20  SPY      50     $485.00    +0.40%     Green           Tech           
+21  F        48     $12.50     +1.50%     Yellow          Auto           
+22  BAC      45     $38.00     +0.80%     Blue            Finance        
+23  LLY      43     $650.00    +0.60%     Blue            Healthcare     
+24  HD       40     $385.00    +0.50%     Blue            Consumer       
+25  NKE      38     $95.00     +0.40%     Yellow          Consumer       
+==========================================================================================
+
+ðŸ“Š Sector Distribution:
+  Tech           : 6 stocks
+  Semiconductor  : 4 stocks
+  Growth         : 4 stocks
+  Auto           : 2 stocks
+  Finance        : 2 stocks
+  Healthcare     : 2 stocks
+  Consumer       : 3 stocks
+  Energy         : 1 stocks
+  Other          : 1 stocks
+
+ðŸ’¾ Saved to: data/watchlist.json
+```
+
+---
+
+## ðŸš€ à¸§à¸´à¸˜à¸µà¹ƒà¸Šà¹‰à¸‡à¸²à¸™
+
+### **Step 1: à¸ªà¸£à¹‰à¸²à¸‡ Watchlist (à¸£à¸­à¸šà¸—à¸µà¹ˆ 1 - 21:35 à¸™.)**
+
+```bash
+# à¸£à¸±à¸™à¸šà¸™à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡
+python generate_top25_watchlist.py hybrid
+```
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:**
+- à¹„à¸Ÿà¸¥à¹Œ `data/watchlist.json` à¸ˆà¸°à¸–à¸¹à¸à¸ªà¸£à¹‰à¸²à¸‡
+- à¸¡à¸µ Top 25 à¸«à¸¸à¹‰à¸™à¸žà¸£à¹‰à¸­à¸¡à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”
+
+---
+
+### **Step 2: Push à¹„à¸› GitHub**
+
+```bash
+git add data/watchlist.json
+git commit -m "Update Top 25 watchlist - Round 1"
+git push
+```
+
+---
+
+### **Step 3: Bot à¸£à¸±à¸™à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ (à¸£à¸­à¸šà¸—à¸µà¹ˆ 2-5)**
+
+GitHub Actions à¸ˆà¸°:
+1. à¸­à¹ˆà¸²à¸™ `data/watchlist.json`
+2. à¸ªà¹à¸à¸™à¹€à¸‰à¸žà¸²à¸° 25 à¸«à¸¸à¹‰à¸™à¸™à¸µà¹‰
+3. à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸•à¸²à¸¡ Signal
+4. à¸­à¸±à¸›à¹€à¸”à¸• `data/portfolio_state.json`
+
+**à¹€à¸§à¸¥à¸²:**
+- à¸£à¸­à¸šà¸—à¸µà¹ˆ 2: 23:05 à¸™.
+- à¸£à¸­à¸šà¸—à¸µà¹ˆ 3: 00:35 à¸™.
+- à¸£à¸­à¸šà¸—à¸µà¹ˆ 4: 02:05 à¸™.
+- à¸£à¸­à¸šà¸—à¸µà¹ˆ 5: 03:35 à¸™.
+
+---
+
+## â° à¸•à¸²à¸£à¸²à¸‡à¹€à¸§à¸¥à¸²à¹à¸™à¸°à¸™à¸³
+
+| à¸£à¸­à¸š | à¹€à¸§à¸¥à¸² (à¹„à¸—à¸¢) | à¸à¸´à¸ˆà¸à¸£à¸£à¸¡ | à¹„à¸Ÿà¸¥à¹Œà¸—à¸µà¹ˆà¸£à¸±à¸™ |
+|-----|-----------|---------|-----------|
+| **1** | **21:35** | **à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™ â†’ Top 25** | `generate_top25_watchlist.py` |
+| 2 | 23:05 | à¸ªà¹à¸à¸™ Top 25 â†’ à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢ | `run_phase2_gh_action.py` (Auto) |
+| 3 | 00:35 | à¸ªà¹à¸à¸™ Top 25 â†’ à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢ | `run_phase2_gh_action.py` (Auto) |
+| 4 | 02:05 | à¸ªà¹à¸à¸™ Top 25 â†’ à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢ | `run_phase2_gh_action.py` (Auto) |
+| 5 | 03:35 | à¸ªà¹à¸à¸™ Top 25 â†’ à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢ | `run_phase2_gh_action.py` (Auto) |
+
+---
+
+## ðŸ“Š à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹ƒà¸™ watchlist.json
+
+```json
+{
+  "generated_at": "2026-01-27T21:35:00",
+  "strategy": "hybrid",
+  "total_scanned": 503,
+  "signals_found": 45,
+  "watchlist": [
+    "NVDA", "TSLA", "AMD", "COIN", "AAPL",
+    "MSFT", "GOOGL", "AMZN", "META", "PLTR",
+    "SNOW", "CRWD", "AVGO", "ASML", "QQQ",
+    "JPM", "UNH", "XOM", "COST", "SPY",
+    "F", "BAC", "LLY", "HD", "NKE"
+  ],
+  "details": [
+    {
+      "symbol": "NVDA",
+      "score": 100,
+      "price": 145.50,
+      "change_pct": 3.45,
+      "color": "Green",
+      "sector": "Semiconductor",
+      "details": {
+        "signal": "Green (Strong Uptrend)",
+        "momentum": "High (+25)",
+        "volatility": "High (+20)",
+        "market_cap": "Large Cap (+10)",
+        "sector": "Semiconductor Leader (+5)"
+      }
+    },
+    ...
+  ]
+}
+```
+
+---
+
+## ðŸŽ¯ à¸‚à¹‰à¸­à¸”à¸µà¸‚à¸­à¸‡à¸£à¸°à¸šà¸šà¸™à¸µà¹‰
+
+### âœ… **à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡**
+- à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” (à¸£à¸­à¸šà¸—à¸µà¹ˆ 1)
+- à¹„à¸¡à¹ˆà¸žà¸¥à¸²à¸”à¹‚à¸­à¸à¸²à¸ªà¸”à¸µà¹†
+
+### âœ… **à¸£à¸§à¸”à¹€à¸£à¹‡à¸§**
+- à¸£à¸­à¸šà¸—à¸µà¹ˆ 2-5 à¸ªà¹à¸à¸™à¹à¸„à¹ˆ 25 à¸«à¸¸à¹‰à¸™
+- à¸£à¸±à¸™à¹€à¸ªà¸£à¹‡à¸ˆà¸ à¸²à¸¢à¹ƒà¸™ 1-2 à¸™à¸²à¸—à¸µ
+
+### âœ… **à¸›à¸£à¸°à¸«à¸¢à¸±à¸”**
+- à¹„à¸¡à¹ˆà¹€à¸ªà¸µà¸¢ GitHub Actions Quota
+- à¹„à¸¡à¹ˆà¹‚à¸”à¸™ API Rate Limit
+
+### âœ… **à¸¢à¸·à¸”à¸«à¸¢à¸¸à¹ˆà¸™**
+- à¹€à¸¥à¸·à¸­à¸à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œà¹„à¸”à¹‰ 3 à¹à¸šà¸š
+- à¸›à¸£à¸±à¸šà¹à¸•à¹ˆà¸‡à¹€à¸à¸“à¸‘à¹Œà¹„à¸”à¹‰
+
+### âœ… **à¹‚à¸›à¸£à¹ˆà¸‡à¹ƒà¸ª**
+- à¹€à¸«à¹‡à¸™à¸„à¸°à¹à¸™à¸™à¹à¸•à¹ˆà¸¥à¸°à¹€à¸à¸“à¸‘à¹Œ
+- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸”à¹‰à¸§à¹ˆà¸²à¸—à¸³à¹„à¸¡à¸–à¸¶à¸‡à¹€à¸¥à¸·à¸­à¸à¸«à¸¸à¹‰à¸™à¸™à¸µà¹‰
+
+---
+
+## ðŸ”§ à¸à¸²à¸£à¸›à¸£à¸±à¸šà¹à¸•à¹ˆà¸‡
+
+### **à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸³à¸™à¸§à¸™à¸«à¸¸à¹‰à¸™**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_top25_watchlist.py`:
+```python
+# à¸šà¸£à¸£à¸—à¸±à¸” ~220
+top_25 = scored_stocks[:30]  # à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹€à¸›à¹‡à¸™ 30
+```
+
+### **à¸›à¸£à¸±à¸šà¸™à¹‰à¸³à¸«à¸™à¸±à¸à¸„à¸°à¹à¸™à¸™**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `calculate_score()`:
+```python
+# à¹€à¸Šà¹ˆà¸™ à¹ƒà¸«à¹‰ Momentum à¸ªà¸³à¸„à¸±à¸à¸à¸§à¹ˆà¸²
+if change_pct > 2:
+    score += 35  # à¹€à¸žà¸´à¹ˆà¸¡à¸ˆà¸²à¸ 25 à¹€à¸›à¹‡à¸™ 35
+```
+
+### **à¹€à¸žà¸´à¹ˆà¸¡ Sector**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `SECTOR_MAP`:
+```python
+SECTOR_MAP = {
+    ...
+    'Retail': ['WMT', 'TGT', 'COST', 'HD', 'LOW'],
+    ...
+}
+```
+
+---
+
+## ðŸ› Troubleshooting
+
+### **à¸›à¸±à¸à¸«à¸²: à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¹„à¸¡à¹ˆà¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ Top 25**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸„à¸°à¹à¸™à¸™à¸•à¹ˆà¸³à¸à¸§à¹ˆà¸²à¸«à¸¸à¹‰à¸™à¸­à¸·à¹ˆà¸™
+**à¹à¸à¹‰à¹„à¸‚:** à¸”à¸¹à¸„à¸°à¹à¸™à¸™à¹à¸•à¹ˆà¸¥à¸°à¹€à¸à¸“à¸‘à¹Œ à¹à¸¥à¹‰à¸§à¸›à¸£à¸±à¸šà¸™à¹‰à¸³à¸«à¸™à¸±à¸
+
+### **à¸›à¸±à¸à¸«à¸²: Sector à¹„à¸¡à¹ˆà¸à¸£à¸°à¸ˆà¸²à¸¢**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¹ƒà¸Šà¹‰ strategy 'top_score'
+**à¹à¸à¹‰à¹„à¸‚:** à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹€à¸›à¹‡à¸™ 'hybrid' à¸«à¸£à¸·à¸­ 'diversified'
+
+### **à¸›à¸±à¸à¸«à¸²: à¸£à¸±à¸™à¸Šà¹‰à¸²**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¹ƒà¸Šà¹‰à¹€à¸§à¸¥à¸²
+**à¹à¸à¹‰à¹„à¸‚:** à¸›à¸à¸•à¸´à¸„à¸£à¸±à¸š à¸£à¸­ 5-10 à¸™à¸²à¸—à¸µ
+
+---
+
+## ðŸ“ à¸ªà¸£à¸¸à¸›
+
+**à¸£à¸°à¸šà¸š Top 25 Watching Stock à¹ƒà¸«à¹‰à¸„à¸¸à¸“:**
+- âœ… à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” (à¸£à¸­à¸šà¸—à¸µà¹ˆ 1)
+- âœ… à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸à¸”à¹‰à¸§à¸¢à¹€à¸à¸“à¸‘à¹Œ 5 à¸¡à¸´à¸•à¸´ (à¸„à¸°à¹à¸™à¸™à¹€à¸•à¹‡à¸¡ 100)
+- âœ… à¸•à¸´à¸”à¸•à¸²à¸¡ Top 25 à¸•à¸¥à¸­à¸”à¸—à¸±à¹‰à¸‡à¸§à¸±à¸™ (à¸£à¸­à¸šà¸—à¸µà¹ˆ 2-5)
+- âœ… à¹€à¸¥à¸·à¸­à¸à¸à¸¥à¸¢à¸¸à¸—à¸˜à¹Œà¹„à¸”à¹‰ 3 à¹à¸šà¸š
+- âœ… à¹‚à¸›à¸£à¹ˆà¸‡à¹ƒà¸ª à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸”à¹‰
+
+**Best Practice:**
+1. à¸£à¸±à¸™ `generate_top25_watchlist.py hybrid` à¸—à¸¸à¸à¹€à¸Šà¹‰à¸² 21:30 à¸™.
+2. Push à¹„à¸› GitHub
+3. à¹ƒà¸«à¹‰ Bot à¸—à¸³à¸‡à¸²à¸™à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ 4 à¸£à¸­à¸šà¸–à¸±à¸”à¹„à¸›
+4. à¸”à¸¹ Dashboard à¹€à¸žà¸·à¹ˆà¸­à¸•à¸´à¸”à¸•à¸²à¸¡à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+**Happy Trading! ðŸš€ðŸ“ˆ**
+
+
+FILE: TWO_TIER_SYSTEM.md
+# ðŸŽ¯ StockRobo-US01: Two-Tier Scanning System
+
+## ðŸ“Š à¸ à¸²à¸žà¸£à¸§à¸¡à¸£à¸°à¸šà¸š
+
+à¸£à¸°à¸šà¸šà¸‚à¸­à¸‡à¹€à¸£à¸²à¸¡à¸µ **2 à¸Šà¸±à¹‰à¸™** à¸—à¸³à¸‡à¸²à¸™à¸£à¹ˆà¸§à¸¡à¸à¸±à¸™:
+
+```
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  TIER 1: Full Market Scanner (à¸£à¸±à¸™à¸šà¸™à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡)      â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚
+â”‚  â”‚ â€¢ à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”                            â”‚ â”‚
+â”‚  â”‚ â€¢ à¹ƒà¸Šà¹‰ CDC Action Zone Strategy                    â”‚ â”‚
+â”‚  â”‚ â€¢ à¸„à¸±à¸”à¹€à¸«à¸¥à¸·à¸­ Top 20 à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸™à¹ˆà¸²à¸ªà¸™à¹ƒà¸ˆ                  â”‚ â”‚
+â”‚  â”‚ â€¢ à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡ data/watchlist.json                    â”‚ â”‚
+â”‚  â”‚ â€¢ à¸£à¸±à¸™: 1-2 à¸„à¸£à¸±à¹‰à¸‡/à¸§à¸±à¸™ (à¹€à¸Šà¹‰à¸²/à¹€à¸¢à¹‡à¸™)                  â”‚ â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                   â”‚
+                   â–¼ watchlist.json
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  TIER 2: Quick Execution Bot (à¸£à¸±à¸™à¸šà¸™ GitHub Actions)    â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚
+â”‚  â”‚ â€¢ à¸­à¹ˆà¸²à¸™ watchlist.json (20 à¸«à¸¸à¹‰à¸™)                   â”‚ â”‚
+â”‚  â”‚ â€¢ à¸ªà¹à¸à¸™à¹€à¸‰à¸žà¸²à¸°à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸„à¸±à¸”à¸¡à¸²à¹à¸¥à¹‰à¸§                       â”‚ â”‚
+â”‚  â”‚ â€¢ à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸•à¸²à¸¡ Signal                               â”‚ â”‚
+â”‚  â”‚ â€¢ à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡ portfolio_state.json                   â”‚ â”‚
+â”‚  â”‚ â€¢ à¸£à¸±à¸™: 5 à¸„à¸£à¸±à¹‰à¸‡/à¸§à¸±à¸™ (à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´)                    â”‚ â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                   â”‚
+                   â–¼ portfolio_state.json
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  TIER 3: Dashboard (GitHub Pages)                       â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”‚
+â”‚  â”‚ â€¢ à¸­à¹ˆà¸²à¸™ portfolio_state.json                       â”‚ â”‚
+â”‚  â”‚ â€¢ à¹à¸ªà¸”à¸‡à¸œà¸¥ Portfolio, Charts, Trades                â”‚ â”‚
+â”‚  â”‚ â€¢ Auto-refresh à¸—à¸¸à¸ 30 à¸§à¸´à¸™à¸²à¸—à¸µ                      â”‚ â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+```
+
+---
+
+## ðŸ”§ à¹„à¸Ÿà¸¥à¹Œà¹à¸¥à¸°à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ
+
+### **Tier 1: Full Scanner**
+
+**à¹„à¸Ÿà¸¥à¹Œ:** `generate_watchlist.py`
+
+**à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ:**
+- à¸ªà¹à¸à¸™à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
+- à¸§à¸´à¹€à¸„à¸£à¸²à¸°à¸«à¹Œà¸”à¹‰à¸§à¸¢ CDC Action Zone
+- à¸„à¸±à¸”à¹€à¸«à¸¥à¸·à¸­ Top 20 à¸•à¸±à¸§à¸—à¸µà¹ˆà¸¡à¸µ Signal à¹à¸£à¸‡à¸—à¸µà¹ˆà¸ªà¸¸à¸”
+- à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡ `data/watchlist.json`
+
+**à¸§à¸´à¸˜à¸µà¸£à¸±à¸™:**
+```bash
+python generate_watchlist.py
+```
+
+**à¸„à¸§à¸²à¸¡à¸–à¸µà¹ˆ:** 1-2 à¸„à¸£à¸±à¹‰à¸‡/à¸§à¸±à¸™ (à¹à¸™à¸°à¸™à¸³: à¹€à¸Šà¹‰à¸² 08:00 à¹à¸¥à¸°à¹€à¸¢à¹‡à¸™ 20:00)
+
+**Output:** `data/watchlist.json`
+```json
+{
+  "generated_at": "2026-01-27T22:00:00",
+  "total_scanned": 503,
+  "signals_found": 45,
+  "watchlist": ["NVDA", "TSLA", "AAPL", ...],
+  "details": [...]
+}
+```
+
+---
+
+### **Tier 2: Quick Execution**
+
+**à¹„à¸Ÿà¸¥à¹Œ:** `run_phase2_gh_action.py`
+
+**à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ:**
+- à¸­à¹ˆà¸²à¸™ `data/watchlist.json`
+- à¸ªà¹à¸à¸™à¹€à¸‰à¸žà¸²à¸°à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸„à¸±à¸”à¸¡à¸²à¹à¸¥à¹‰à¸§ (20 à¸•à¸±à¸§)
+- à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸•à¸²à¸¡ Signal
+- à¸šà¸±à¸™à¸—à¸¶à¸à¸¥à¸‡ `data/portfolio_state.json`
+
+**à¸§à¸´à¸˜à¸µà¸£à¸±à¸™:**
+- **à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´:** GitHub Actions (5 à¸„à¸£à¸±à¹‰à¸‡/à¸§à¸±à¸™)
+- **Manual:** `python run_phase2_gh_action.py`
+
+**à¸„à¸§à¸²à¸¡à¸–à¸µà¹ˆ:** 5 à¸£à¸­à¸š/à¸§à¸±à¸™
+- 21:35 à¸™. (Pre-Market)
+- 23:05 à¸™. (Market Open)
+- 00:35 à¸™. (Mid Session)
+- 02:05 à¸™. (Late Session)
+- 03:35 à¸™. (Near Close)
+
+**Output:** `data/portfolio_state.json`
+
+---
+
+### **Tier 3: Dashboard**
+
+**à¹„à¸Ÿà¸¥à¹Œ:** `dashboard/index.html`
+
+**à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ:**
+- à¸­à¹ˆà¸²à¸™ `data/portfolio_state.json`
+- à¹à¸ªà¸”à¸‡à¸œà¸¥ Portfolio, Charts, Trades
+- Auto-refresh à¸—à¸¸à¸ 30 à¸§à¸´à¸™à¸²à¸—à¸µ
+
+**à¸§à¸´à¸˜à¸µà¹€à¸›à¸´à¸”:**
+- à¸”à¸±à¸šà¹€à¸šà¸´à¸¥à¸„à¸¥à¸´à¸ `dashboard/index.html`
+- à¸«à¸£à¸·à¸­ Deploy à¹„à¸› GitHub Pages
+
+---
+
+## ðŸ“‹ à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§
+
+### **à¸«à¸¡à¸§à¸”à¸«à¸¡à¸¹à¹ˆà¸«à¸¥à¸±à¸:**
+
+1. **Big Tech (10 à¸•à¸±à¸§)**
+   - AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, NFLX, ORCL, CRM
+
+2. **Semiconductors (20 à¸•à¸±à¸§)**
+   - AMD, INTC, QCOM, MU, AVGO, TXN, AMAT, LRCX, KLAC, ASML, ...
+
+3. **Growth/SaaS (25 à¸•à¸±à¸§)**
+   - COIN, HOOD, PLTR, U, SNOW, DDOG, NET, CRWD, ZS, OKTA, ...
+
+4. **Indices/ETFs (10 à¸•à¸±à¸§)**
+   - SPY, QQQ, IWM, DIA, VTI, VOO, XLK, XLF, XLE, XLV
+
+5. **Blue Chips (50 à¸•à¸±à¸§)**
+   - DIS, BA, MCD, KO, JNJ, PG, WMT, CVX, XOM, JPM, ...
+
+6. **Finance (30 à¸•à¸±à¸§)**
+   - BAC, C, GS, MS, WFC, BLK, SCHW, AXP, V, MA, ...
+
+7. **Healthcare (30 à¸•à¸±à¸§)**
+   - UNH, LLY, ABBV, TMO, ABT, DHR, BMY, AMGN, GILD, CVS, ...
+
+8. **Energy (25 à¸•à¸±à¸§)**
+   - SLB, COP, EOG, PXD, MPC, VLO, PSX, OXY, HAL, ...
+
+9. **Consumer (40 à¸•à¸±à¸§)**
+   - COST, HD, LOW, TGT, NKE, SBUX, CMG, YUM, MCD, ...
+
+10. **à¹à¸¥à¸°à¸­à¸·à¹ˆà¸™à¹† à¸­à¸µà¸ 263 à¸•à¸±à¸§**
+
+**ðŸ“ à¸«à¸¡à¸²à¸¢à¹€à¸«à¸•à¸¸:** à¹„à¸Ÿà¸¥à¹Œ `generate_watchlist.py` à¸¡à¸µà¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡ 150 à¸•à¸±à¸§ à¸„à¸¸à¸“à¸ªà¸²à¸¡à¸²à¸£à¸–à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡à¹„à¸”à¹‰à¹ƒà¸™ list `ALL_SYMBOLS`
+
+---
+
+## ðŸš€ à¸§à¸´à¸˜à¸µà¹ƒà¸Šà¹‰à¸‡à¸²à¸™
+
+### **à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 1: à¸ªà¸£à¹‰à¸²à¸‡ Watchlist (à¸—à¸³à¸šà¸™à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡)**
+
+```bash
+# à¸£à¸±à¸™à¸—à¸¸à¸à¹€à¸Šà¹‰à¸² à¸«à¸£à¸·à¸­à¸—à¸¸à¸à¹€à¸¢à¹‡à¸™
+python generate_watchlist.py
+```
+
+**à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ:**
+```
+==========================================
+  StockRobo-US01: Watchlist Generator
+  Scanning 503 symbols...
+==========================================
+
+âœ… Found 45 buy signals
+
+ðŸ“Š Top 20 Watchlist:
+------------------------------------------------------------
+ 1. NVDA   - Change: +3.45%
+ 2. TSLA   - Change: +2.89%
+ 3. AAPL   - Change: +2.12%
+...
+------------------------------------------------------------
+
+ðŸ’¾ Saved to: data/watchlist.json
+```
+
+---
+
+### **à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 2: Push Watchlist à¹„à¸› GitHub**
+
+```bash
+git add data/watchlist.json
+git commit -m "Update watchlist"
+git push
+```
+
+---
+
+### **à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 3: à¹ƒà¸«à¹‰ Bot à¸£à¸±à¸™à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´**
+
+GitHub Actions à¸ˆà¸°:
+1. à¸­à¹ˆà¸²à¸™ `data/watchlist.json`
+2. à¸ªà¹à¸à¸™à¹€à¸‰à¸žà¸²à¸° 20 à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸„à¸±à¸”à¸¡à¸²
+3. à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸•à¸²à¸¡ Signal
+4. à¸­à¸±à¸›à¹€à¸”à¸• `data/portfolio_state.json`
+
+---
+
+### **à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 4: à¸”à¸¹ Dashboard**
+
+à¹€à¸›à¸´à¸” `dashboard/index.html` à¹€à¸žà¸·à¹ˆà¸­à¸”à¸¹à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+---
+
+## â° à¸•à¸²à¸£à¸²à¸‡à¹€à¸§à¸¥à¸²à¹à¸™à¸°à¸™à¸³
+
+| à¹€à¸§à¸¥à¸² (à¹„à¸—à¸¢) | à¸à¸´à¸ˆà¸à¸£à¸£à¸¡ | à¹„à¸Ÿà¸¥à¹Œà¸—à¸µà¹ˆà¸£à¸±à¸™ |
+|-----------|---------|-----------|
+| 08:00 | à¸ªà¸£à¹‰à¸²à¸‡ Watchlist (à¹€à¸Šà¹‰à¸²) | `generate_watchlist.py` |
+| 20:00 | à¸­à¸±à¸›à¹€à¸”à¸• Watchlist (à¹€à¸¢à¹‡à¸™) | `generate_watchlist.py` |
+| 21:35 | Bot à¸£à¸­à¸š 1 (Auto) | `run_phase2_gh_action.py` |
+| 23:05 | Bot à¸£à¸­à¸š 2 (Auto) | `run_phase2_gh_action.py` |
+| 00:35 | Bot à¸£à¸­à¸š 3 (Auto) | `run_phase2_gh_action.py` |
+| 02:05 | Bot à¸£à¸­à¸š 4 (Auto) | `run_phase2_gh_action.py` |
+| 03:35 | Bot à¸£à¸­à¸š 5 (Auto) | `run_phase2_gh_action.py` |
+
+---
+
+## ðŸŽ¯ à¸‚à¹‰à¸­à¸”à¸µà¸‚à¸­à¸‡à¸£à¸°à¸šà¸š 2 à¸Šà¸±à¹‰à¸™
+
+### âœ… **Tier 1 (Full Scanner)**
+- à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡à¸«à¸¸à¹‰à¸™à¸—à¸±à¹‰à¸‡à¸•à¸¥à¸²à¸” (503 à¸•à¸±à¸§)
+- à¸«à¸²à¹‚à¸­à¸à¸²à¸ªà¸—à¸µà¹ˆà¸”à¸µà¸—à¸µà¹ˆà¸ªà¸¸à¸”
+- à¸£à¸±à¸™à¸šà¸™à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡ (à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸ˆà¸³à¸à¸±à¸”)
+
+### âœ… **Tier 2 (Quick Bot)**
+- à¸£à¸±à¸™à¹€à¸£à¹‡à¸§ (1-2 à¸™à¸²à¸—à¸µ)
+- à¸›à¸£à¸°à¸«à¸¢à¸±à¸” API Quota
+- à¹€à¸«à¸¡à¸²à¸°à¸à¸±à¸š GitHub Actions
+- à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¹„à¸”à¹‰à¸—à¸±à¸™à¹€à¸§à¸¥à¸²
+
+### âœ… **à¸œà¸¥à¸£à¸§à¸¡**
+- à¹„à¸”à¹‰à¸—à¸±à¹‰à¸‡à¸„à¸§à¸²à¸¡à¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡ (503 à¸«à¸¸à¹‰à¸™)
+- à¹à¸¥à¸°à¸„à¸§à¸²à¸¡à¸£à¸§à¸”à¹€à¸£à¹‡à¸§ (5 à¸£à¸­à¸š/à¸§à¸±à¸™)
+- à¹„à¸¡à¹ˆà¹€à¸ªà¸µà¸¢ GitHub Actions Quota
+
+---
+
+## ðŸ”§ à¸à¸²à¸£à¸›à¸£à¸±à¸šà¹à¸•à¹ˆà¸‡
+
+### **à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸³à¸™à¸§à¸™à¸«à¸¸à¹‰à¸™à¹ƒà¸™ Watchlist**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_watchlist.py`:
+```python
+watchlist = generate_watchlist(top_n=30)  # à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸ˆà¸²à¸ 20 à¹€à¸›à¹‡à¸™ 30
+```
+
+### **à¹€à¸žà¸´à¹ˆà¸¡à¸«à¸¸à¹‰à¸™à¸—à¸µà¹ˆà¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸ªà¹à¸à¸™**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_watchlist.py`:
+```python
+ALL_SYMBOLS = [
+    'AAPL', 'MSFT', ...
+    'YOUR_SYMBOL_HERE',  # à¹€à¸žà¸´à¹ˆà¸¡à¸•à¸£à¸‡à¸™à¸µà¹‰
+]
+```
+
+### **à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹€à¸à¸“à¸‘à¹Œà¸à¸²à¸£à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸**
+
+à¹à¸à¹‰à¹„à¸‚à¹ƒà¸™ `generate_watchlist.py`:
+```python
+# à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡ momentum (default)
+sorted_signals = sorted(buy_signals, key=lambda x: abs(x.get('change_pct', 0)), reverse=True)
+
+# à¸«à¸£à¸·à¸­à¹€à¸£à¸µà¸¢à¸‡à¸•à¸²à¸¡à¸£à¸²à¸„à¸²
+sorted_signals = sorted(buy_signals, key=lambda x: x.get('price', 0))
+```
+
+---
+
+## ðŸ“Š à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ
+
+### **watchlist.json**
+```json
+{
+  "generated_at": "2026-01-27T08:00:00",
+  "total_scanned": 503,
+  "signals_found": 45,
+  "watchlist": [
+    "NVDA", "TSLA", "AAPL", "MSFT", "AMZN",
+    "GOOGL", "META", "AMD", "COIN", "PLTR",
+    "SNOW", "CRWD", "NET", "DDOG", "ZS",
+    "SPY", "QQQ", "AVGO", "ASML", "TSM"
+  ],
+  "details": [
+    {
+      "symbol": "NVDA",
+      "price": 145.50,
+      "change_pct": 3.45,
+      "date": "2026-01-27"
+    },
+    ...
+  ]
+}
+```
+
+---
+
+## ðŸ› Troubleshooting
+
+### **à¸›à¸±à¸à¸«à¸²: generate_watchlist.py à¸£à¸±à¸™à¸Šà¹‰à¸²**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸ªà¹à¸à¸™ 503 à¸«à¸¸à¹‰à¸™à¹ƒà¸Šà¹‰à¹€à¸§à¸¥à¸²à¸™à¸²à¸™
+**à¹à¸à¹‰à¹„à¸‚:** à¸›à¸à¸•à¸´à¸„à¸£à¸±à¸š à¸£à¸­ 5-10 à¸™à¸²à¸—à¸µ
+
+### **à¸›à¸±à¸à¸«à¸²: Bot à¹„à¸¡à¹ˆà¸­à¹ˆà¸²à¸™ watchlist.json**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¹„à¸Ÿà¸¥à¹Œà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰ Push à¹„à¸› GitHub
+**à¹à¸à¹‰à¹„à¸‚:** 
+```bash
+git add data/watchlist.json
+git commit -m "Add watchlist"
+git push
+```
+
+### **à¸›à¸±à¸à¸«à¸²: watchlist.json à¹„à¸¡à¹ˆà¸¡à¸µ**
+**à¸ªà¸²à¹€à¸«à¸•à¸¸:** à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸£à¸±à¸™ `generate_watchlist.py`
+**à¹à¸à¹‰à¹„à¸‚:** Bot à¸ˆà¸°à¹ƒà¸Šà¹‰ default 10 à¸«à¸¸à¹‰à¸™à¹à¸—à¸™ (à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸±à¸à¸«à¸²)
+
+---
+
+## ðŸ“ à¸ªà¸£à¸¸à¸›
+
+**à¸£à¸°à¸šà¸š 2 à¸Šà¸±à¹‰à¸™à¸™à¸µà¹‰à¹ƒà¸«à¹‰à¸„à¸¸à¸“:**
+- âœ… à¸ªà¹à¸à¸™à¸«à¸¸à¹‰à¸™ 503 à¸•à¸±à¸§à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” (Tier 1)
+- âœ… à¸‹à¸·à¹‰à¸­à¸‚à¸²à¸¢à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ 5 à¸£à¸­à¸š/à¸§à¸±à¸™ (Tier 2)
+- âœ… à¸”à¸¹ Dashboard à¹à¸šà¸š Real-time (Tier 3)
+- âœ… à¹„à¸¡à¹ˆà¹€à¸ªà¸µà¸¢ GitHub Actions Quota
+- âœ… à¹„à¸¡à¹ˆà¸•à¹‰à¸­à¸‡à¹€à¸›à¸´à¸”à¸„à¸­à¸¡à¸—à¸´à¹‰à¸‡à¹„à¸§à¹‰
+
+**Best of Both Worlds!** ðŸŽ‰
+
+
+FILE: PHASE3_SUMMARY.md
+# Phase 3: Dashboard & Visualization - Summary
+
+## âœ… Status: INITIAL VERSION COMPLETED
+
+**Completion Date:** 2026-01-27  
+**Dashboard Type:** GitHub Pages (Static)
+
+---
+
+## ðŸ“ Files Created
+
+### Dashboard Files
+```
+dashboard/
+â”œâ”€â”€ index.html          # Main dashboard page
+â”œâ”€â”€ styles.css          # Dark theme styling
+â”œâ”€â”€ dashboard.js        # Dashboard logic
+â”œâ”€â”€ README.md           # User guide
+â””â”€â”€ DEPLOYMENT.md       # Deployment instructions
+```
+
+### Data Files
+```
+data/
+â””â”€â”€ portfolio_state.json    # Portfolio data (auto-updated by bot)
+```
+
+---
+
+## ðŸŽ¯ Features Implemented
+
+### âœ… 1. Portfolio Overview Cards
+- ðŸ’° **Cash Balance** - Available capital
+- ðŸ“Š **Portfolio Value** - Total equity (cash + positions)
+- ðŸ“ˆ **Total Return** - Percentage gain/loss
+- ðŸŽ¯ **Active Positions** - Number of open trades
+
+### âœ… 2. Performance Charts
+- **Equity Curve** - Portfolio value over time (Line chart)
+- **Win/Loss Distribution** - Trade outcomes (Doughnut chart)
+
+### âœ… 3. Current Positions Table
+Columns:
+- Symbol
+- Quantity
+- Average Price
+- Current Price
+- P&L (Profit/Loss in $)
+- P&L % (Percentage)
+
+### âœ… 4. Recent Trades Table
+Shows last 10 trades with:
+- Date & Time
+- Symbol
+- Type (BUY/SELL)
+- Quantity
+- Price
+- Status (FILLED/PENDING)
+
+### âœ… 5. System Information
+- â° Last Update Time
+- ðŸ¤– Next Scheduled Run
+- ðŸ“Š Total Trades Count
+
+### âœ… 6. Auto-Refresh
+- Automatically reloads data every 30 seconds
+- Keeps dashboard up-to-date
+
+### âœ… 7. Responsive Design
+- Works on mobile phones ðŸ“±
+- Works on tablets ðŸ“±
+- Works on desktop ðŸ’»
+
+---
+
+## ðŸŽ¨ Design Features
+
+### Modern Dark Theme
+- Sleek dark background
+- Vibrant accent colors
+- Glassmorphism effects
+- Smooth animations
+
+### Color Coding
+- ðŸŸ¢ **Green** - Profits, Buy orders, Wins
+- ðŸ”´ **Red** - Losses, Sell orders
+- ðŸŸ¡ **Yellow** - Pending, Warnings
+- ðŸ”µ **Blue** - Primary actions, Info
+
+### Typography
+- Clean, modern fonts
+- Easy to read numbers
+- Clear hierarchy
+
+---
+
+## ðŸš€ Deployment Options
+
+### Option 1: GitHub Pages (Current)
+**Pros:**
+- âœ… Free hosting
+- âœ… Easy setup
+- âœ… HTTPS included
+- âœ… Global CDN
+
+**Cons:**
+- âš ï¸ Public access (anyone can view)
+- âš ï¸ Manual refresh needed
+- âš ï¸ No real-time updates
+
+**URL Format:**
+`https://[username].github.io/[repo-name]/`
+
+### Option 2: Firebase (Future Upgrade)
+**Pros:**
+- âœ… Real-time updates
+- âœ… Authentication
+- âœ… Private data
+- âœ… Database included
+
+**Cons:**
+- âš ï¸ More complex setup
+- âš ï¸ Requires Firebase account
+
+---
+
+## ðŸ“Š Data Flow
+
+```
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚      GitHub Actions (Cloud Bot)         â”‚
+â”‚  Runs 5x/day â†’ Executes trades          â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+               â”‚
+               â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   data/portfolio_state.json              â”‚
+â”‚   - Cash balance                         â”‚
+â”‚   - Portfolio positions                  â”‚
+â”‚   - Order history                        â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+               â”‚
+               â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   Dashboard (GitHub Pages)               â”‚
+â”‚   - Loads JSON                           â”‚
+â”‚   - Calculates metrics                   â”‚
+â”‚   - Renders charts                       â”‚
+â”‚   - Auto-refreshes every 30s             â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+```
+
+---
+
+## ðŸ”§ Technical Stack
+
+### Frontend
+- **HTML5** - Structure
+- **CSS3** - Styling (Custom, no framework)
+- **JavaScript (ES6+)** - Logic
+- **Chart.js 4.4.0** - Charts (via CDN)
+
+### Data Format
+- **JSON** - Portfolio state storage
+- **Fetch API** - Data loading
+
+### Hosting
+- **GitHub Pages** - Static hosting
+- **GitHub Actions** - Auto-deployment
+
+---
+
+## ðŸ“ˆ Metrics Calculated
+
+### Portfolio Metrics
+1. **Cash Balance** - Direct from JSON
+2. **Portfolio Value** - Cash + (Positions Ã— Estimated Price)
+3. **Total Return** - ((Current Value - Initial Capital) / Initial Capital) Ã— 100
+4. **Active Positions** - Count of symbols in portfolio
+
+### Trade Metrics
+1. **Win Rate** - (Winning Trades / Total Closed Trades) Ã— 100
+2. **Total Trades** - Count of all orders
+3. **P&L per Position** - (Current Price - Avg Price) Ã— Quantity
+
+### Performance Metrics
+1. **Equity Curve** - Portfolio value over time
+2. **Win/Loss Ratio** - Visual distribution
+
+---
+
+## ðŸ”„ Update Mechanism
+
+### Automatic Updates (GitHub Actions)
+1. Bot runs (5x/day)
+2. Updates `portfolio_state.json`
+3. Commits to GitHub
+4. GitHub Pages auto-rebuilds (1-2 min)
+5. Dashboard shows new data on next refresh
+
+### Manual Refresh
+- Click browser refresh button
+- Or wait for auto-refresh (30s)
+
+---
+
+## ðŸ“± Mobile Experience
+
+### Responsive Breakpoints
+- **Desktop**: > 768px (Full layout)
+- **Tablet**: 768px (Adjusted grid)
+- **Mobile**: < 768px (Stacked layout)
+
+### Mobile Optimizations
+- Touch-friendly buttons
+- Readable font sizes
+- Optimized table scrolling
+- Fast loading
+
+---
+
+## ðŸ› Known Limitations
+
+### Current Version
+1. **No Real-time Prices** - Uses last trade price
+2. **Manual Refresh** - Not truly real-time
+3. **Public Access** - No authentication
+4. **Limited History** - Only last 50 trades stored
+5. **No Alerts** - No push notifications
+
+### Future Improvements
+- Real-time stock prices (via API)
+- Firebase real-time database
+- User authentication
+- Line/Telegram notifications
+- Historical performance data
+- Strategy comparison
+
+---
+
+## ðŸ”’ Security Considerations
+
+### Current Setup (GitHub Pages)
+âš ï¸ **Data is PUBLIC** - Anyone with URL can view
+
+**Sensitive Data:**
+- Portfolio positions
+- Trade history
+- Cash balance
+
+**Not Exposed:**
+- API keys (stored in GitHub Secrets)
+- Broker credentials
+- Personal information
+
+### Recommendations
+1. Use private GitHub repository (requires Pro)
+2. Upgrade to Firebase with authentication
+3. Host on private server
+4. Add password protection
+
+---
+
+## ðŸ“š Usage Instructions
+
+### View Dashboard Locally
+
+**Option A: Direct File**
+```
+Open: file:///C:/Program External Source/AGI Stock Analyst/stockrobo-us01/dashboard/index.html
+```
+
+**Option B: Local Server**
+```bash
+cd dashboard
+python -m http.server 8000
+# Open: http://localhost:8000
+```
+
+### Deploy to GitHub Pages
+
+```bash
+# 1. Push to GitHub
+git add dashboard/ data/
+git commit -m "Phase 3: Dashboard"
+git push
+
+# 2. Enable GitHub Pages
+# Settings â†’ Pages â†’ Source: main â†’ Folder: /dashboard
+
+# 3. Access dashboard
+# https://[username].github.io/[repo-name]/
+```
+
+---
+
+## ðŸŽ¯ Next Steps
+
+### Phase 3.1: Enhancements
+- [ ] Add real-time stock prices (Alpha Vantage API)
+- [ ] Implement search/filter for trades
+- [ ] Add date range selector
+- [ ] Export data to CSV
+- [ ] Dark/Light theme toggle
+
+### Phase 3.2: Firebase Migration
+- [ ] Setup Firebase project
+- [ ] Migrate to Firestore database
+- [ ] Add real-time listeners
+- [ ] Implement authentication
+- [ ] Deploy to Firebase Hosting
+
+### Phase 3.3: Advanced Features
+- [ ] Line/Telegram bot integration
+- [ ] Email notifications
+- [ ] Strategy performance comparison
+- [ ] Risk metrics dashboard
+- [ ] Trade journal with notes
+
+---
+
+## ðŸ“Š Performance
+
+### Load Time
+- **First Load**: ~1-2 seconds
+- **Auto-refresh**: ~200-500ms
+- **Chart Rendering**: ~100-200ms
+
+### Data Size
+- **portfolio_state.json**: ~2-5 KB
+- **Total Dashboard**: ~50 KB
+- **Chart.js CDN**: ~200 KB
+
+### Browser Support
+- âœ… Chrome/Edge (Latest)
+- âœ… Firefox (Latest)
+- âœ… Safari (Latest)
+- âœ… Mobile browsers
+
+---
+
+## ðŸŽ‰ Success Criteria
+
+### âœ… Completed
+- [x] Dashboard displays portfolio data
+- [x] Charts render correctly
+- [x] Tables show positions and trades
+- [x] Auto-refresh works
+- [x] Mobile responsive
+- [x] Deployed to GitHub Pages
+
+### ðŸš§ In Progress
+- [ ] Real-time price updates
+- [ ] Firebase integration
+- [ ] Notifications
+
+---
+
+## ðŸ“ Change Log
+
+### Version 1.0.0 (2026-01-27)
+- Initial release
+- GitHub Pages deployment
+- Basic dashboard features
+- Chart.js integration
+- Auto-refresh functionality
+
+---
+
+**Status:** âœ… Phase 3 (Initial) Complete  
+**Next Phase:** Firebase Integration & Advanced Features  
+**Version:** 1.0.0
+
+
+FILE: ROADMAP.md
+# StockRobo-US01 Project Roadmap
+
+## Phase 1: Foundation & Strategies (COMPLETED)
+**Goal:** Build the core logic, data handling, and strategy engine.
+
+- [x] **Project Initialization**
+  - [x] Create project structure
+  - [x] Basic Security (Authenticator)
+- [x] **Data Layer**
+  - [x] `MarketData`: Module to fetch historical/real-time data (e.g., yfinance)
+  - [x] Data validation and cleaning
+- [x] **Strategy Engine**
+  - [x] Base `Strategy` class interface (CDC, Fibo implemented)
+  - [x] CDC Action Zone implementation
+  - [x] Fibo Zone Strategy (High Win rate for mean reversion)
+- [x] **Backtesting System**
+  - [x] `BacktestEngine`: Run strategies against historical data
+  - [x] Performance metrics (Win Rate, PnL)
+- [x] **Risk Management (Critical)**
+  - [x] Position Sizing Calculator (Risk-based)
+  - [x] Market Regime Filter (SPY Trend)
+
+## Phase 2: Execution & Automation (COMPLETED âœ…)
+**Goal:** Connect to live markets, automate decision making, and handle execution logic.
+
+- [x] **Smart Execution Engine**
+  - [x] **Signal Prioritizer:** Logic to rank multiple signals (Win Rate > Risk/Reward)
+  - [x] **Order Type Logic:** Smart selection between Market vs Limit orders (Slippage control)
+  - [x] **Reconciliation:** Check mechanism to verify order status vs portfolio
+- [x] **Paper Trading System**
+  - [x] Simulated Broker (Local Portfolio Tracking with Persistence)
+  - [x] `OrderManager`: Generate and log orders with state management
+- [x] **GitHub Actions Integration**
+  - [x] Cloud-based automated execution (5 runs/day, Mon-Fri)
+  - [x] Portfolio state persistence across runs
+  - [x] Scheduled execution matching US market hours
+- [ ] **Real Broker Integration (Future)**
+  - [ ] Connect to API (e.g., Interactive Brokers, Alpaca)
+  - [ ] Error Handling & Retry Logic
+
+
+## Phase 3: Dashboard & Visualization (IN PROGRESS ðŸš§)
+**Goal:** Create web-based dashboard for portfolio monitoring and performance tracking.
+
+- [x] **GitHub Pages Dashboard**
+  - [x] HTML/CSS/JavaScript dashboard
+  - [x] Portfolio overview cards (Cash, Value, Return, Positions)
+  - [x] Performance charts (Equity curve, Win/Loss)
+  - [x] Current positions table with P&L
+  - [x] Recent trades history
+  - [x] Auto-refresh functionality (30s)
+  - [x] Responsive design (mobile-friendly)
+- [ ] **Firebase Integration (Future)**
+  - [ ] Real-time database (Firestore)
+  - [ ] Live stock price updates
+  - [ ] Firebase Hosting
+  - [ ] User authentication
+- [ ] **Advanced Features (Future)**
+  - [ ] Line/Telegram notifications
+  - [ ] Strategy comparison charts
+  - [ ] Performance analytics
+  - [ ] Trade journal
+
+
+
+

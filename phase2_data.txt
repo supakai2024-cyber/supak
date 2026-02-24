@@ -1,155 +1,88 @@
-================================================================================
-STOCKROBO-US01 PHASE 2: EXECUTION & AUTOMATION - COMPLETE BACKUP
-================================================================================
-Date: 2026-01-27
-Status: COMPLETED ✅
-GitHub Actions: Successfully Running
+﻿========================================
+   STOCKROBO-US01 PHASE 2 BACKUP (LATEST UPDATED)
+   Date: 2026-01-28 00:46:06
+========================================
 
-================================================================================
-TABLE OF CONTENTS
-================================================================================
-1. Project Overview
-2. File Structure
-3. Complete Code Files
-   3.1 GitHub Actions Workflow (.github/workflows/phase2_bot.yml)
-   3.2 Main Execution Script (run_phase2_gh_action.py)
-   3.3 Order Manager with Persistence (src/execution/order_manager.py)
-   3.4 Risk Manager (src/risk/risk_manager.py)
-   3.5 Dependencies (requirements.txt)
-4. Configuration Details
-5. Execution Schedule
-6. Troubleshooting Guide
+FILE: run_phase2_paper.py
+from src.execution.order_manager import OrderManager
+from src.risk.risk_manager import RiskManager
 
-================================================================================
-1. PROJECT OVERVIEW
-================================================================================
+def main():
+    print("==========================================")
+    print("   StockRobo-US01: Phase 2 Execution Demo ")
+    print("   (Paper Trading & Logic Test)           ")
+    print("==========================================")
+    
+    # 1. Initialize Systems
+    cash = 50_000
+    risk_pct = 2.0
+    
+    order_mgr = OrderManager(cash_balance=cash)
+    risk_mgr = RiskManager(portfolio_value=cash, risk_per_trade_pct=risk_pct)
+    
+    # 2. Simulate Signal Generation (From Scanner)
+    # Scenario: We found 5 signals, but maybe we can't afford all, or need to pick best.
+    raw_signals = [
+        {'symbol': 'TSLA', 'strategy': 'FiboZone', 'entry': 420.0, 'stop': 380.0, 'win_rate': 87.5, 'change_pct': -5.5},
+        {'symbol': 'NVDA', 'strategy': 'FiboZone', 'entry': 140.0, 'stop': 135.0, 'win_rate': 95.0, 'change_pct': -3.2},
+        {'symbol': 'AAPL', 'strategy': 'CDCActionZone', 'entry': 230.0, 'stop': 220.0, 'win_rate': 60.0, 'change_pct': 0.5},
+        {'symbol': 'GME', 'strategy': 'FiboZone', 'entry': 25.0,  'stop': 20.0,  'win_rate': 40.0, 'change_pct': -10.0}, # High risk
+        {'symbol': 'MSFT', 'strategy': 'CDCActionZone', 'entry': 400.0, 'stop': 390.0, 'win_rate': 75.0, 'change_pct': 1.2}
+    ]
+    
+    # 3. Prioritization Logic (Smart Selection)
+    ranked_signals = order_mgr.prioritize_signals(raw_signals)
+    
+    # 4. Processing Best Signals
+    orders_to_send = []
+    
+    print("\n[EXEC] Calculating Sizing & Orders for Top Picks...")
+    for sig in ranked_signals:
+        # Stop if we run out of simulated 'slots' or just execute top N
+        # For now, process all valid ones.
+        
+        # A. Position Sizing
+        sizing = risk_mgr.calculate_position_size(sig['entry'], sig['stop'])
+        if sizing['shares'] == 0:
+            print(f"  Skipping {sig['symbol']}: {sizing.get('reason', 'Zero shares')}")
+            continue
+            
+        print(f"  {sig['symbol']}: Size {sizing['shares']} shares (Risk ${sizing['total_risk_dollars']:.0f})")
+        
+        # B. Create Order Ticket (with Market/Limit logic)
+        order = order_mgr.create_order(sig, sizing)
+        if order:
+            orders_to_send.append(order)
+            
+    # 5. Execution (Paper Trade)
+    order_mgr.execute_orders(orders_to_send)
+    
+    # 6. Reconciliation
+    order_mgr.reconcile()
 
-Phase 2 implements automated trading execution on GitHub Actions with:
-- Cloud-based execution (no local computer needed)
-- Portfolio state persistence across runs
-- Scheduled execution: 5 times/day (Mon-Fri)
-- Aligned with US market hours (Thailand timezone)
+if __name__ == "__main__":
+    main()
 
-Key Features:
-✅ Stateless execution with state management
-✅ Automatic scheduling via GitHub Actions
-✅ Cross-platform compatibility (Windows/Linux)
-✅ Error handling and logging
-✅ Paper trading simulation
 
-================================================================================
-2. FILE STRUCTURE
-================================================================================
-
-stockrobo-us01/
-├── .github/
-│   └── workflows/
-│       └── phase2_bot.yml          # GitHub Actions workflow configuration
-├── src/
-│   ├── execution/
-│   │   └── order_manager.py        # Order execution with persistence
-│   ├── risk/
-│   │   └── risk_manager.py         # Position sizing and risk management
-│   ├── engine/
-│   │   ├── scanner.py              # Market scanner
-│   │   └── backtest_engine.py      # Backtesting engine
-│   ├── strategies/
-│   │   ├── cdc_action_zone.py      # CDC strategy
-│   │   └── fibo_strategy.py        # Fibonacci strategy
-│   ├── data/
-│   │   └── market_data.py          # Market data fetcher
-│   ├── notification/
-│   │   └── alert_engine.py         # Alert system
-│   └── security/
-│       └── authenticator.py        # Security module
-├── data/
-│   └── portfolio_state.json        # Portfolio persistence (auto-created)
-├── run_phase2_gh_action.py         # Main script for GitHub Actions
-├── requirements.txt                # Python dependencies
-├── ROADMAP.md                      # Project roadmap
-├── PHASE2_SUMMARY.md               # Phase 2 documentation
-└── phase2_data.txt                 # This backup file
-
-================================================================================
-3. COMPLETE CODE FILES
-================================================================================
-
-================================================================================
-3.1 GitHub Actions Workflow (.github/workflows/phase2_bot.yml)
-================================================================================
-
-name: "StockRobo-US01 Phase 2 Bot"
-
-on:
-  schedule:
-    # รอบที่ 1: 21:35 น. เวลาไทย (14:35 UTC)
-    - cron: '35 14 * * 1-5'
-    # รอบที่ 2: 23:05 น. เวลาไทย (16:05 UTC)
-    - cron: '5 16 * * 1-5'
-    # รอบที่ 3: 00:35 น. เวลาไทย (17:35 UTC)
-    - cron: '35 17 * * 1-5'
-    # รอบที่ 4: 02:05 น. เวลาไทย (19:05 UTC)
-    - cron: '5 19 * * 1-5'
-    # รอบที่ 5: 03:35 น. เวลาไทย (20:35 UTC)
-    - cron: '35 20 * * 1-5'
-  workflow_dispatch: # Allows manual trigger from GitHub UI
-
-permissions:
-  contents: write # Important: Allows the bot to commit changes to the repo
-
-jobs:
-  run-market-scan:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      - name: Run Phase 2 Bot (Single Pass)
-        run: python run_phase2_gh_action.py
-
-      - name: Commit and Push Portfolio State
-        # Only commit if there are changes to the state file
-        run: |
-          git config --global user.name "StockRobo Bot"
-          git config --global user.email "bot@stockrobo.local"
-          git add data/portfolio_state.json || echo "No state file to add"
-          git diff --staged --quiet || git commit -m "Auto-update portfolio state [skip ci]"
-          git diff --staged --quiet || git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-================================================================================
-3.2 Main Execution Script (run_phase2_gh_action.py)
-================================================================================
-
+FILE: run_phase2_gh_action.py
 import sys
 import os
+import json
 
 # --- CRITICAL FIX: Force Add Paths ---
-# 1. หาตำแหน่งไฟล์ปัจจุบัน
+# 1. à¸«à¸²à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡à¹„à¸Ÿà¸¥à¹Œà¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™
 current_file_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_file_path)
 
-# 2. เพิ่ม path ของโฟลเดอร์ปัจจุบัน
+# 2. à¹€à¸žà¸´à¹ˆà¸¡ path à¸‚à¸­à¸‡à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œà¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# 3. ลองหาโฟลเดอร์ 'src' ว่าอยู่ที่ไหน
-# ถ้าไฟล์นี้อยู่ใน stockrobo-us01/run_...py แต่ src อยู่ใน stockrobo-us01/src
+# 3. à¸¥à¸­à¸‡à¸«à¸²à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œ 'src' à¸§à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¸—à¸µà¹ˆà¹„à¸«à¸™
+# à¸–à¹‰à¸²à¹„à¸Ÿà¸¥à¹Œà¸™à¸µà¹‰à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ stockrobo-us01/run_...py à¹à¸•à¹ˆ src à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ stockrobo-us01/src
 src_path = os.path.join(current_dir, 'src')
 
-# ถ้าไม่เจอ src ให้ลองถอยออกไป 1 ชั้น (เผื่อไฟล์อยู่ลึก)
+# à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¹€à¸ˆà¸­ src à¹ƒà¸«à¹‰à¸¥à¸­à¸‡à¸–à¸­à¸¢à¸­à¸­à¸à¹„à¸› 1 à¸Šà¸±à¹‰à¸™ (à¹€à¸œà¸·à¹ˆà¸­à¹„à¸Ÿà¸¥à¹Œà¸­à¸¢à¸¹à¹ˆà¸¥à¸¶à¸)
 if not os.path.exists(src_path):
     parent_dir = os.path.dirname(current_dir)
     if parent_dir not in sys.path:
@@ -193,7 +126,23 @@ def main():
         order_manager = OrderManager(state_file=state_file_path)
         risk_manager = RiskManager(portfolio_value=50000.0, risk_per_trade_pct=2.0)
         scanner = MarketScanner()
-        target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+        
+        # Load watchlist (from file or use default)
+        watchlist_path = os.path.join(current_dir, "data", "watchlist.json")
+        
+        if os.path.exists(watchlist_path):
+            try:
+                with open(watchlist_path, 'r') as f:
+                    watchlist_data = json.load(f)
+                    target_symbols = watchlist_data.get('watchlist', [])
+                    print(f"[GH ACTION] Loaded watchlist from file: {len(target_symbols)} symbols")
+                    print(f"[GH ACTION] Generated at: {watchlist_data.get('generated_at', 'Unknown')}")
+            except Exception as e:
+                print(f"[GH ACTION] Error loading watchlist: {e}")
+                target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
+        else:
+            print("[GH ACTION] No watchlist found. Using default symbols.")
+            target_symbols = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD']
         
         print(f"[GH ACTION] Scanning {len(target_symbols)} symbols...")
         results = scanner.scan(target_symbols)
@@ -205,6 +154,7 @@ def main():
             signals.append(item)
             
         print(f"[GH ACTION] Found {len(signals)} raw buy signals.")
+
         
         if signals:
             ranked_signals = order_manager.prioritize_signals(signals)
@@ -246,10 +196,141 @@ def main():
 if __name__ == "__main__":
     main()
 
-================================================================================
-3.3 Order Manager with Persistence (src/execution/order_manager.py)
-================================================================================
+FILE: run_bot_loop.py
+import time
+import datetime
+import schedule
+import sys
+import traceback
+from src.engine.scanner import MarketScanner
+from src.execution.order_manager import OrderManager
+from src.risk.risk_manager import RiskManager
+from src.notification.alert_engine import AlertEngine
 
+class AutonomousBot:
+    def __init__(self):
+        self.alert_system = AlertEngine(log_file="logs/bot_activity.log")
+        self.alert_system.send_alert("SYSTEM", "Initializing StockRobo-US01...", "INFO")
+        
+        try:
+            self.scanner = MarketScanner()
+            self.order_manager = OrderManager(cash_balance=50000.0) # Paper Portfolio
+            self.risk_manager = RiskManager(portfolio_value=50000.0, risk_per_trade_pct=2.0)
+            self.target_symbols = [
+                'SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'AMD'
+            ]
+            self.is_running = True
+            self.alert_system.send_alert("SYSTEM", "Initialization Complete.", "INFO")
+        except Exception as e:
+            self.alert_system.send_alert("CRITICAL", f"Initialization Failed: {e}", "CRITICAL")
+            raise e
+
+    def heartbeat(self):
+        """Simple check to show bot is alive."""
+        # Using a lower log level or just console for heartbeat to avoid flooding logs?
+        # For now, let's keep it visible but maybe distinct.
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] [HEARTBEAT] System Operational.")
+
+    def job_market_scan(self):
+        """
+        Main Routine: Scan -> Signal -> Size -> Execute
+        """
+        self.alert_system.send_alert("SCANNER", "Starting Scheduled Market Scan...", "INFO")
+        
+        try:
+            # 1. Scan
+            results = self.scanner.scan(self.target_symbols)
+            
+            # Combine signals (Buy + Sell if we were handling shorts/exits)
+            # For this demo phase, let's focus on BUY signals from Scanner
+            signals = []
+            
+            # Process Buy Signals
+            for item in results.get('buy_signals', []):
+                # Alert for each signal found
+                self.alert_system.send_alert("SIGNAL", f"Found BUY signal: {item['symbol']} at {item['price']:.2f}", "INFO")
+                
+                # Enrich signal with Strategy Tag (Scanner mostly does CDC currently)
+                item['strategy'] = 'Scanner_CDC' # Simplification
+                # Mock win rate for simulation
+                item['win_rate'] = 75.0 
+                signals.append(item)
+                
+            # Process Heavy Drops (Alert Only for now)
+            for item in results.get('heavy_drops', []):
+                 self.alert_system.send_alert("WATCH", f"Heavy Drop Detected: {item['symbol']} ({item['change_pct']:.2f}%)", "WARNING")
+                 # In real implementation, FiboStrategy would run here
+                 pass
+
+            if not signals:
+                self.alert_system.send_alert("SCANNER", "No actionable signals found this cycle.", "INFO")
+                return
+
+            self.alert_system.send_alert("OPPORTUNITY", f"Found {len(signals)} potential candidates.", "INFO")
+            
+            # 2. Prioritize
+            ranked_signals = self.order_manager.prioritize_signals(signals)
+            
+            # 3. Execution Loop
+            orders_to_send = []
+            for sig in ranked_signals:
+                # Check Risk/Sizing
+                # stop loss logic usually comes from strategy. 
+                # For scanner results, we might assume a trailing stop or % stop
+                # Let's mock a Stop Loss 5% below entry for scanner results
+                entry_price = sig['price']
+                stop_price = entry_price * 0.95
+                
+                sizing = self.risk_manager.calculate_position_size(entry_price, stop_price)
+                if sizing['shares'] > 0:
+                    sig['entry'] = entry_price # Normalize keys
+                    
+                    order = self.order_manager.create_order(sig, sizing)
+                    if order:
+                        orders_to_send.append(order)
+                        self.alert_system.send_alert("ORDER_GEN", f"Generated Order for {sig['symbol']}: {sizing['shares']} shares", "INFO")
+            
+            # 4. Execute
+            if orders_to_send:
+                self.order_manager.execute_orders(orders_to_send)
+                self.alert_system.send_alert("EXECUTION", f"Sent {len(orders_to_send)} orders to market.", "INFO")
+            
+            # 5. Reconcile
+            self.order_manager.reconcile()
+
+        except Exception as e:
+            self.alert_system.send_alert("ERROR", f"Error during market scan loop: {e}", "ERROR")
+            traceback.print_exc() 
+            # We do NOT raise here, effectively keeping the loop alive despite a crash in this job.
+
+    def start_loop(self):
+        self.alert_system.send_alert("SYSTEM", "StockRobo-US01: Autonomous Loop STARTED", "INFO")
+        self.alert_system.send_alert("SYSTEM", f"Monitoring {len(self.target_symbols)} Symbols", "INFO")
+        
+        # Schedule Jobs
+        # In real world: Market hours check. Here: Run every 1 minute for DEMO.
+        schedule.every(1).minutes.do(self.job_market_scan)
+        schedule.every(30).seconds.do(self.heartbeat)
+        
+        # Initial Run immediately
+        self.job_market_scan()
+        
+        try:
+            while self.is_running:
+                schedule.run_pending()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            self.alert_system.send_alert("SYSTEM", "Bot Stopped by User (KeyboardInterrupt).", "WARNING")
+        except Exception as e:
+            self.alert_system.send_alert("CRITICAL", f"Main Loop Crash: {e}", "CRITICAL")
+            raise e
+
+if __name__ == "__main__":
+    bot = AutonomousBot()
+    bot.start_loop()
+
+
+FILE: src/execution/order_manager.py
 from typing import List, Dict, Any, Optional
 import time
 import uuid
@@ -425,229 +506,414 @@ class OrderManager:
         print("Broker Status: MATCHED (Simulated)")
         # In real world, we would call broker_api.get_positions() and compare.
 
-================================================================================
-3.4 Risk Manager (src/risk/risk_manager.py)
-================================================================================
 
-import pandas as pd
-import numpy as np
-from typing import Dict, Any
 
-class RiskManager:
-    def __init__(self, portfolio_value: float, risk_per_trade_pct: float = 1.0):
+FILE: src/notification/alert_engine.py
+import os
+import datetime
+import requests
+import traceback
+from typing import Optional
+import src.config as config
+
+class AlertEngine:
+    """
+    Handles system-wide notifications and logging.
+    Supports Console output, File logging, and Telegram.
+    """
+    def __init__(self, log_file: str = "system_alerts.log"):
+        self.log_file = log_file
+        self.ensure_log_dir()
+        
+        # Telegram Setup
+        self.tg_enabled = config.TELEGRAM_ENABLED
+        self.tg_token = config.TELEGRAM_BOT_TOKEN
+        self.tg_chat_id = config.TELEGRAM_CHAT_ID
+
+    def ensure_log_dir(self):
+        """Ensures the directory for the log file exists."""
+        if os.path.dirname(self.log_file):
+            os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+
+    def send_telegram(self, message: str):
+        """Sends a message to the configured Telegram Chat."""
+        if not self.tg_enabled or "YOUR_" in self.tg_token:
+            return
+
+        url = f"https://api.telegram.org/bot{self.tg_token}/sendMessage"
+        payload = {
+            "chat_id": self.tg_chat_id,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        try:
+            # Timeout is important to not hang the bot loop
+            response = requests.post(url, json=payload, timeout=5)
+            if response.status_code != 200:
+                print(f"[AlertEngine] Telegram Error: {response.text}")
+        except Exception as e:
+            print(f"[AlertEngine] Telegram Connection Failed: {e}")
+
+    def send_alert(self, title: str, message: str, level: str = "INFO", color: str = None):
         """
-        Manages Position Sizing and Risk Metrics.
+        Sends an alert/notification.
         
         Args:
-            portfolio_value (float): Total capital available (or Total Equity).
-            risk_per_trade_pct (float): Max risk per trade as % of portfolio (e.g. 1.0 = 1%).
+            title: Short description or Category (e.g., [SIGNAL], [ERROR])
+            message: The content of the alert.
+            level: INFO, WARNING, ERROR, CRITICAL.
         """
-        self.portfolio_value = portfolio_value
-        self.risk_pct = risk_per_trade_pct / 100.0
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Format for Log/Console
+        log_msg = f"[{timestamp}] [{level}] {title}: {message}"
+        
+        # 1. Console Output
+        print(log_msg)
+        
+        # 2. File Log
+        self.log_to_file(log_msg)
+        
+        # 3. Telegram Dispatch
+        # We only send specific important events to avoid spamming
+        should_send = False
+        emoji = ""
+        
+        if level == "CRITICAL":
+            should_send = True
+            emoji = "ðŸš¨"
+        elif level == "WARNING":
+            should_send = True
+            emoji = "âš ï¸"
+        elif title in ["SIGNAL", "OPPORTUNITY", "EXECUTION"]:
+            should_send = True
+            emoji = "ðŸš€"
+        elif title == "SYSTEM" and "STARTED" in message:
+             # Notify when bot starts
+             should_send = True
+             emoji = "ðŸ¤–"
 
-    def calculate_position_size(self, entry_price: float, stop_loss_price: float) -> Dict[str, Any]:
+        if should_send and self.tg_enabled:
+            tg_msg = f"{emoji} *{title}*\n{message}"
+            self.send_telegram(tg_msg)
+
+    def log_to_file(self, message: str):
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(message + "\n")
+        except Exception as e:
+            print(f"Error writing to log file: {e}")
+
+    def test_alert(self):
+        self.send_alert("TEST", "This is a test alert.", "INFO")
+
+
+FILE: src/security/authenticator.py
+import time
+import hmac
+import hashlib
+import struct
+
+class Authenticator:
+    def __init__(self, secret_key: str = "ANTIGRAVITY_SECURE_KEY", interval: int = 15):
         """
-        Calculate ideal position size based on risk and stop loss distance.
-        The Golden Rule: Money Risked = (Entry - StopLoss) * NumberOfShares
+        Initialize the Authenticator using a TOTP-like mechanism.
+        
+        Args:
+            secret_key (str): The secret key for HMAC.
+            interval (int): Time step in seconds (default 15s).
+        """
+        self.secret = secret_key
+        self.interval = interval
+
+    def generate_code(self, timestamp=None) -> str:
+        """
+        Generate a 6-digit code based on the current time (or provided timestamp).
+        """
+        if timestamp is None:
+            timestamp = time.time()
+        
+        # Calculate time counter based on interval
+        counter = int(timestamp // self.interval)
+        
+        # Convert counter to bytes (8 bytes, big-endian)
+        counter_bytes = struct.pack(">Q", counter)
+        
+        # Create HMAC-SHA1 signature using the secret
+        key_bytes = self.secret.encode('utf-8')
+        hmac_digest = hmac.new(key_bytes, counter_bytes, hashlib.sha1).digest()
+        
+        # Dynamic Truncation
+        offset = hmac_digest[-1] & 0x0F
+        binary_code = (
+            (hmac_digest[offset] & 0x7F) << 24 |
+            (hmac_digest[offset + 1] & 0xFF) << 16 |
+            (hmac_digest[offset + 2] & 0xFF) << 8 |
+            (hmac_digest[offset + 3] & 0xFF)
+        )
+        
+        # Generate 6-digit OTP
+        otp = binary_code % 1_000_000
+        return f"{otp:06d}"
+
+    def verify_code(self, code: str, window: int = 1) -> bool:
+        """
+        Verify the provided code.
+        
+        Args:
+            code (str): The code to verify.
+            window (int): Number of intervals to check before/after.
         
         Returns:
-            Dict with 'shares', 'position_value', 'risk_amount', 'actual_risk_pct'
+            bool: True if valid, False otherwise.
         """
-        if entry_price <= stop_loss_price:
-             # Stop loss must be below entry for long position
-             # Unless we handle short, but for now we assume Long Only.
-             return {
-                 'shares': 0,
-                 'reason': 'Stop Loss is above or equal to Entry Price (Invalid for Long)'
-             }
-             
-        risk_per_share = entry_price - stop_loss_price
-        max_risk_amount = self.portfolio_value * self.risk_pct
+        current_time = time.time()
         
-        # Calculate shares
-        shares = int(max_risk_amount // risk_per_share)
-        
-        # Ensure we don't exceed portfolio cash (Buying Power check)
-        # Though often Risk limits size before buying power does for tight stops.
-        total_cost = shares * entry_price
-        if total_cost > self.portfolio_value:
-            # If cost exceeds cash, we are limited by Cash, not Risk.
-            shares_cash_limit = int(self.portfolio_value // entry_price)
-            shares = shares_cash_limit
-            # In this case, our risk is actually LESS than max_risk_amount
-        
-        position_value = shares * entry_price
-        actual_risk_dollars = shares * risk_per_share
-        
-        return {
-            'shares': shares,
-            'entry': entry_price,
-            'stop_loss': stop_loss_price,
-            'position_value': position_value,
-            'risk_per_share': risk_per_share,
-            'total_risk_dollars': actual_risk_dollars,
-            'risk_pct_of_port': (actual_risk_dollars / self.portfolio_value) * 100
-        }
+        # Check current, previous, and next windows
+        for i in range(-window, window + 1):
+            check_time = current_time + (i * self.interval)
+            if self.generate_code(check_time) == code:
+                return True
+        return False
 
-    def assess_market_regime(self, market_data_df: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Simple Market Regime Filter using SMA200.
-        market_data_df must contain 'Close' and sufficient history.
-        """
-        if market_data_df.empty or len(market_data_df) < 200:
-            return {'regime': 'Unknown', 'safety_level': 'Neutral'}
-            
-        current_price = market_data_df['Close'].iloc[-1]
-        sma200 = market_data_df['Close'].rolling(window=200).mean().iloc[-1]
-        
-        if current_price > sma200:
-            return {
-                'regime': 'Bullish',
-                'description': 'Price is above 200-day SMA.',
-                'safety_level': 'Safe'
-            }
-        else:
-            return {
-                'regime': 'Bearish',
-                'description': 'Price is below 200-day SMA. Caution advised.',
-                'safety_level': 'Caution'
-            }
+# Self-test if run standalone
+if __name__ == "__main__":
+    auth = Authenticator()
+    code = auth.generate_code()
+    print(f"Generated Code: {code}")
+    print(f"Verify Result: {auth.verify_code(code)}")
 
-================================================================================
-3.5 Dependencies (requirements.txt)
-================================================================================
 
-pandas
-numpy
-yfinance
-schedule
+FILE: .github/workflows/stockrobo_bot.yml
+name: "StockRobo-US01 Full-Auto Bot"
 
-================================================================================
-4. CONFIGURATION DETAILS
-================================================================================
+on:
+  schedule:
+    # à¸£à¸­à¸šà¸—à¸µà¹ˆ 1: 21:35 à¸™. (14:35 UTC)
+    - cron: '35 14 * * 1-5'
+    # à¸£à¸­à¸šà¸—à¸µà¹ˆ 2: 23:05 à¸™. (16:05 UTC)
+    - cron: '5 16 * * 1-5'
+    # à¸£à¸­à¸šà¸—à¸µà¹ˆ 3: 00:35 à¸™. (17:35 UTC)
+    - cron: '35 17 * * 1-5'
+    # à¸£à¸­à¸šà¸—à¸µà¹ˆ 4: 02:05 à¸™. (19:05 UTC)
+    - cron: '5 19 * * 1-5'
+    # à¸£à¸­à¸šà¸—à¸µà¹ˆ 5: 03:35 à¸™. (20:35 UTC)
+    - cron: '35 20 * * 1-5'
+  
+  workflow_dispatch: # à¸›à¸¸à¹ˆà¸¡à¸à¸”à¸£à¸±à¸™à¹€à¸­à¸‡
 
-GitHub Repository Settings:
-----------------------------
-Location: Settings → Actions → General → Workflow permissions
-Required: "Read and write permissions" ✅
+permissions:
+  contents: write
 
-Environment:
------------
-- Python Version: 3.9
-- OS: Ubuntu Latest (GitHub Actions)
-- Timezone: UTC (converted from Thailand GMT+7)
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-Initial Portfolio:
------------------
-- Starting Cash: $50,000 USD
-- Risk Per Trade: 2% of portfolio
-- Position Sizing: Risk-based (calculated from stop loss)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-Target Symbols:
---------------
-SPY, QQQ, NVDA, TSLA, AAPL, MSFT, AMZN, GOOGL, META, AMD
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-Strategies:
-----------
-- CDC Action Zone (Trend Following)
-- Fibonacci Zone (Mean Reversion)
+      - name: 0. Ensure Data Directory
+        run: mkdir -p data
 
-================================================================================
-5. EXECUTION SCHEDULE
-================================================================================
+      - name: 1. Scan Market (500+ Stocks)
+        run: python generate_combined_watchlist.py
 
-Schedule: 5 runs per day, Monday - Friday
-Timezone: Thailand (GMT+7)
+      - name: 2. Execute Trading
+        run: python run_phase2_gh_action.py
 
-| Round | Thailand Time | UTC Time | Market Phase      |
-|-------|---------------|----------|-------------------|
-| 1     | 21:35         | 14:35    | Pre-Market        |
-| 2     | 23:05         | 16:05    | Market Open       |
-| 3     | 00:35         | 17:35    | Mid Session       |
-| 4     | 02:05         | 19:05    | Late Session      |
-| 5     | 03:35         | 20:35    | Near Close        |
+      - name: 3. Commit and Push Updates
+        run: |
+          git config --global user.name "StockRobo Full-Auto"
+          git config --global user.email "bot@stockrobo.local"
+          git add data/portfolio_state.json data/watchlist.json
+          git diff --staged --quiet || git commit -m "Full-Auto Update: Portfolio & Watchlist [skip ci]"
+          git push origin main || echo "Nothing to push or push failed"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-Cron Expressions:
-- Round 1: '35 14 * * 1-5'
-- Round 2: '5 16 * * 1-5'
-- Round 3: '35 17 * * 1-5'
-- Round 4: '5 19 * * 1-5'
-- Round 5: '35 20 * * 1-5'
 
-Resource Usage:
-- Estimated: 200 minutes/month
-- GitHub Free Tier: 2,000 minutes/month
-- Status: ✅ Well within limits
+FILE: PHASE2_SUMMARY.md
+# Phase 2: Execution & Automation - Summary
 
-================================================================================
-6. TROUBLESHOOTING GUIDE
-================================================================================
+## âœ… Status: COMPLETED
 
-Problem: Bot not running automatically
-Solution:
-1. Check Settings → Actions → Workflow permissions (must be Read/Write)
-2. Verify workflow file syntax in .github/workflows/phase2_bot.yml
-3. Check GitHub Actions quota (Settings → Billing)
+**Completion Date:** 2026-01-27  
+**GitHub Actions:** âœ… Successfully Running
 
-Problem: Import Error "No module named 'src'"
-Solution:
-1. Ensure 'src' folder is uploaded to GitHub
-2. Check run_phase2_gh_action.py path resolution code
-3. View GitHub Actions logs for file listing
+---
 
-Problem: Portfolio state not saving
-Solution:
-1. Verify workflow has write permissions
-2. Check if 'data' folder exists in repo
-3. Review commit step in workflow logs
-4. Ensure GITHUB_TOKEN is available
+## ðŸ“ Files Created/Modified
 
-Problem: Execution fails silently
-Solution:
-1. Go to Actions tab → Click on failed run
-2. Click on "run-market-scan" job
-3. Expand each step to see detailed logs
-4. Look for red X marks and error messages
+### 1. Core Execution Files
+- **`run_phase2_gh_action.py`** - Main script for GitHub Actions execution
+  - One-shot execution model (wake â†’ scan â†’ trade â†’ save â†’ sleep)
+  - Dynamic path resolution for Linux/Windows compatibility
+  - Error handling with detailed logging
+  
+- **`src/execution/order_manager.py`** - Enhanced with Persistence
+  - `load_state()` - Load portfolio from JSON
+  - `save_state()` - Save portfolio to JSON
+  - Cash balance tracking
+  - Order history (last 50 orders)
 
-Problem: Wrong execution time
-Solution:
-1. Remember GitHub Actions uses UTC timezone
-2. Thailand is GMT+7, so subtract 7 hours from desired time
-3. Example: 21:35 Thailand = 14:35 UTC
-4. Update cron expressions in workflow file
+### 2. GitHub Actions Configuration
+- **`.github/workflows/phase2_bot.yml`** - Workflow automation
+  - Scheduled runs: 5 times per day (Mon-Fri)
+  - Auto-commit portfolio state back to repo
+  - Python 3.9 environment setup
 
-================================================================================
-BACKUP INFORMATION
-================================================================================
+### 3. Supporting Files
+- **`requirements.txt`** - Python dependencies
+  ```
+  pandas
+  numpy
+  yfinance
+  schedule
+  ```
 
-Backup Date: 2026-01-27 22:14 (Thailand Time)
-Backup Created By: Antigravity AI Assistant
-Phase Status: COMPLETED ✅
-GitHub Actions Status: Successfully Running
+- **`data/portfolio_state.json`** - Portfolio persistence (auto-created)
+  ```json
+  {
+    "timestamp": <unix_timestamp>,
+    "cash_balance": 50000.0,
+    "portfolio": {},
+    "orders": []
+  }
+  ```
 
-Files Included in This Backup:
-1. .github/workflows/phase2_bot.yml
-2. run_phase2_gh_action.py
-3. src/execution/order_manager.py
-4. src/risk/risk_manager.py
-5. requirements.txt
+---
 
-Additional Documentation:
-- ROADMAP.md (updated with Phase 2 completion)
-- PHASE2_SUMMARY.md (comprehensive guide)
+## â° Execution Schedule
 
-GitHub Repository:
-- URL: https://github.com/supakai2024-cyber/supak.git
-- Branch: main
-- Last Successful Run: 2026-01-27
+**Timezone:** Thailand (GMT+7) â†’ UTC (GMT+0)
 
-Recovery Instructions:
-1. If files are lost, copy code from sections 3.1-3.5
-2. Recreate folder structure as shown in section 2
-3. Upload to GitHub and verify workflow runs
-4. Check Settings → Actions permissions
-5. Test with manual "Run workflow" trigger
+| Round | Thailand Time | UTC Time | Market Phase |
+|-------|---------------|----------|--------------|
+| 1     | 21:35         | 14:35    | Pre-Market   |
+| 2     | 23:05         | 16:05    | Market Open  |
+| 3     | 00:35         | 17:35    | Mid Session  |
+| 4     | 02:05         | 19:05    | Late Session |
+| 5     | 03:35         | 20:35    | Near Close   |
 
-================================================================================
-END OF BACKUP
-================================================================================
+**Frequency:** Monday - Friday only  
+**Interval:** Every 1.5 hours (90 minutes)
+
+---
+
+## ðŸ”§ Technical Implementation
+
+### Persistence System
+```python
+# OrderManager automatically saves state after each execution
+order_manager = OrderManager(state_file="data/portfolio_state.json")
+order_manager.execute_orders(orders)  # Auto-saves after execution
+```
+
+### Path Resolution (Cross-Platform)
+```python
+# Handles both Windows and Linux paths
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+```
+
+### Error Handling
+- Import errors â†’ Detailed file listing for debugging
+- Runtime errors â†’ Logged to GitHub Actions console
+- Missing state file â†’ Gracefully handled with defaults
+
+---
+
+## ðŸ“Š Resource Usage
+
+**GitHub Actions Free Tier:**
+- Limit: 2,000 minutes/month
+- Usage: ~200 minutes/month (5 runs/day Ã— 5 days Ã— 4 weeks Ã— 2 min/run)
+- Status: âœ… Well within limits
+
+---
+
+## ðŸš€ How to Use
+
+### Manual Trigger
+1. Go to GitHub â†’ **Actions** tab
+2. Select "StockRobo-US01 Phase 2 Bot"
+3. Click **Run workflow** button
+
+### View Results
+1. Check **Actions** tab for execution logs
+2. View `data/portfolio_state.json` for current portfolio
+3. Monitor commit history for auto-updates
+
+### Modify Schedule
+Edit `.github/workflows/phase2_bot.yml`:
+```yaml
+schedule:
+  - cron: '35 14 * * 1-5'  # Modify time here
+```
+
+---
+
+## ðŸ” Required GitHub Settings
+
+**Repository Settings â†’ Actions â†’ General:**
+- âœ… Workflow permissions: **Read and write permissions**
+- âœ… Allow GitHub Actions to create pull requests: **Enabled**
+
+---
+
+## ðŸŽ¯ Key Features Implemented
+
+1. **Stateless Execution** - Bot remembers portfolio between runs
+2. **Automatic Scheduling** - Runs without manual intervention
+3. **Cloud-Based** - No need to keep computer running
+4. **Error Recovery** - Graceful handling of edge cases
+5. **Audit Trail** - All trades logged and committed to repo
+
+---
+
+## ðŸ“ Next Steps (Phase 3)
+
+- [ ] Dashboard for visualization
+- [ ] Line/Telegram notifications
+- [ ] Real broker integration (Alpaca/IB)
+- [ ] Advanced risk management
+- [ ] Performance analytics
+
+---
+
+## ðŸ› Troubleshooting
+
+### Bot not running?
+- Check **Settings â†’ Actions** permissions
+- Verify workflow file syntax
+- Check GitHub Actions quota
+
+### Import errors?
+- Ensure `src/` folder is uploaded to GitHub
+- Check `run_phase2_gh_action.py` path resolution
+
+### State not saving?
+- Verify write permissions in workflow
+- Check `data/` folder exists
+- Review commit logs in Actions
+
+---
+
+**Status:** âœ… Production Ready  
+**Last Updated:** 2026-01-27  
+**Version:** 1.0.0
+
+
+
