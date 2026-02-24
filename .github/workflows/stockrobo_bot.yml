@@ -2,17 +2,11 @@ name: "StockRobo-US01 Full-Auto Bot"
 
 on:
   schedule:
-    # รอบที่ 1: 21:35 น. (14:35 UTC)
+    # Round 1: 21:35 ไทย → Full Scan
     - cron: '35 14 * * 1-5'
-    # รอบที่ 2: 23:05 น. (16:05 UTC)
-    - cron: '5 16 * * 1-5'
-    # รอบที่ 3: 00:35 น. (17:35 UTC)
-    - cron: '35 17 * * 1-5'
-    # รอบที่ 4: 02:05 น. (19:05 UTC)
-    - cron: '5 19 * * 1-5'
-    # รอบที่ 5: 03:35 น. (20:35 UTC)
-    - cron: '35 20 * * 1-5'
-  
+    # Round 2: 03:30 ไทย → Trade Only
+    - cron: '30 20 * * 1-5'
+   
   workflow_dispatch: # ปุ่มกดรันเอง
 
 permissions:
